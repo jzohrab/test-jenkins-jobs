@@ -1,5 +1,8 @@
 // Ref https://stackoverflow.com/questions/28572080/how-to-access-parameters-in-a-parameterized-build/41276956#41276956
 
+currentBuild.displayName = "#${currentBuild.number} (${params.prmBRANCH})"
+currentBuild.description = "Build for branch: ${params.prmBRANCH}"
+
 node('localhost') {
   stage('Print prm') {
     echo "DEBUG: parameter prmBranch = " + params.prmBRANCH
