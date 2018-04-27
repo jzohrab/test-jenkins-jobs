@@ -1,0 +1,11 @@
+node('master') {
+  stage('Checkout') {
+    checkout scm
+  }
+  stage('Create jobs') {
+    jobDsl targets: 'seed_jobs/**/*.groovy',
+      removedConfigFilesAction: 'DELETE',
+      removedJobAction: 'DISABLE',
+      removedViewAction: 'DELETE'
+  }
+}

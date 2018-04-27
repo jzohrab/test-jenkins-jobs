@@ -1,0 +1,9 @@
+// Ref https://stackoverflow.com/questions/28572080/how-to-access-parameters-in-a-parameterized-build/41276956#41276956
+
+node('localhost') {
+  stage('Print prm') {
+    echo "DEBUG: parameter prmBranch = " + params.prmBRANCH
+    echo "DEBUG: parameter prmBRANCH = ${params.prmBRANCH}"
+    bat "echo prmBRANCH is ${params.prmBRANCH}"
+  }
+}

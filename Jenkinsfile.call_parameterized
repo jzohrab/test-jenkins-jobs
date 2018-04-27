@@ -1,0 +1,8 @@
+node('localhost') {
+
+  stage('Start_jobs') {
+    build job: 'Testing/parameterized-job', parameters: [string(name: 'prmBRANCH', value: 'develop')], wait: false
+    build job: 'Testing/parameterized-job', parameters: [string(name: 'prmBRANCH', value: 'master')], wait: false
+    build job: 'Testing/parameterized-job', parameters: [string(name: 'prmBRANCH', value: 'release')], wait: false
+  }
+}
