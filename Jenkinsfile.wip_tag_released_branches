@@ -7,8 +7,12 @@ node('sensei_build') {
 
   try {
     // powershell curl
-    powershell "Invoke-WebRequest -Uri https://genome.klick.com/manifest.json"
-    
+    def script = """
+$request = 'https://genome.klick.com/manifest.json'
+Invoke-RestMethod $request | ConvertFrom-Json | select vcs-sha
+"""
+    powershell script
+
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
   }
