@@ -8,9 +8,11 @@ node('sensei_build') {
   try {
 
     def check_URL = 'https://genome.klic2k.com/'
-    def sha = do_curl(check_URL)
+    def warnings = []
+    def sha = do_curl(check_URL, warnings)
     echo "GOT SHA: ${sha}"
-
+    echo "warnings: ${warnings}"
+    
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
   }
@@ -26,14 +28,19 @@ node('sensei_build') {
 
 ///////////////////////////////////////
 
-def do_curl(check_URL) {
+def do_curl(check_URL, warnings) {
     def myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
     def sha = null
     try {
       sha = powershell(returnStdout: true, script: myscript).trim()
+      if (sha = null) {
+        warnings << "Missing sha from ${check_URL}/manifest.json"
+      }
     }
     catch (err) {
-      echo "Error getting sha from ${check_URL}: ${err}"
+      msg = "Error getting sha from ${check_URL}: ${err}"
+      echo msg
+      warnings << msg
       echo "Suppressing and continuing"
     }
     return sha
