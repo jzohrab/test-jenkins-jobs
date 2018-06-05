@@ -26,5 +26,6 @@ node('sensei_build') {
 
 def post_debug_log() {
   def body = DEBUG_LOG.collect { "* ${it} " }.join("\n")
-  def msg = [ subject: 'Debug', body: body, channel: 'jenkins-dev-tests' ]
+  def msg = [ subject: 'DEBUG_LOG', body: body, channel: 'jenkins-dev-tests' ]
+  senseislack.post_success(msg)
 }
