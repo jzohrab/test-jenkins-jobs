@@ -42,26 +42,15 @@ def get_deployed_sha_from_manifest(check_URL) {
   try {
     // See https://stackoverflow.com/questions/1408042/output-data-with-no-column-headings-using-powershel
     // re "-ExpandProperty" flag.
-    def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
-    echo "A"
+    def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
     def tmp = powershell(returnStdout: true, script: myscript).trim()
-    echo "GOT TMP = \"${tmp}\""
-    echo "B"
-    echo "tmp size = ${tmp.trim().size()}"
     if (tmp.trim().size() == 0) { tmp = null }
-    echo "tmp is null? ${tmp == null}"
-
     result.sha = tmp
-    echo "result.sha = \"${result.sha}\""
-    echo "result.sha is null? \"${result.sha == null}\""
-    
     if (result.sha == null) {
-      result.error = "Missing vcs-sha from ${manifest_url}"
+      result.error = "Null sha (missing vcs-sha from ${manifest_url} ?)"
     }
-    echo "C"
   }
   catch (err) {
-    echo "D"
     result.error = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
   }
   return result
