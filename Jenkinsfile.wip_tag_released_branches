@@ -59,11 +59,12 @@ def get_deployed_sha_from_manifest(check_URL) {
 }
 
 
-def items_matching_regex(cmd, regex) {
+def ls_remote_objects_matching_regex(cmd, strip_leading, regex) {
   return bat(returnStdout: true, script: cmd).
     split("\n").
-    collect { it.split("\t") }
-  //  findAll { it[1] =~ regex }
+    collect { it.split("\t") }.
+    collect { [ it[0], it[1].replace(strip_leading, '') ] }.
+    findAll { it[1] =~ regex }
 }
 
 
@@ -71,12 +72,12 @@ def get_untagged_release_branches(branch_regex, tag_regex) {
 
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
       def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome"
-      def list = items_matching_regex(cmd, branch_regex)
+      def list = ls_remote_objects_matching_regex(cmd, 'refs/heads/', branch_regex)
       echo "BRANCHES"
       echo "${list}"
       
       cmd = "git ls-remote --tags https://${U}:${P}@github.com/KlickInc/klick-genome"
-      list = items_matching_regex(cmd, tag_regex)
+      list = ls_remote_objects_matching_regex(cmd, 'refs/tags/', tag_regex)
       echo "TAGS"
       echo "${list}"
     }
