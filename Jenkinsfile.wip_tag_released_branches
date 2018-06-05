@@ -9,7 +9,7 @@ node('sensei_build') {
 
     def check_URL = 'https://genome.klick.com/'
     def warnings = []
-    def sha = do_curl(check_URL, warnings)
+    def sha = get_deployed_sha_from_manifest(check_URL, warnings)
     echo "GOT SHA: ${sha}"
     echo "warnings: ${warnings}"
     
