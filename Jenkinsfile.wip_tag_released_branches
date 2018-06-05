@@ -11,9 +11,9 @@ node('sensei_build') {
       'https://genome.klick.com/'
     ]
 
-    def results = check_urls.collect {
-      def data = get_deployed_sha_from_manifest(check_URL)
-      [ site: it, sha: data.sha, error: data.error ]
+    def results = check_urls.collect { url ->
+      def data = get_deployed_sha_from_manifest(url)
+      [ site: url, sha: data.sha, error: data.error ]
     }
 
     echo "Results: ${results}"
