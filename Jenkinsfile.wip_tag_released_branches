@@ -20,7 +20,7 @@ node('sensei_build') {
 
     // Appending "-2" to the end of the branch and tag names
     // to differentiate the "release" branch from the "release-sensei" branch.
-    get_untagged_release_branches("release-2\\*", "genome_2\\*")
+    get_untagged_release_branches("release-2", "genome_2")
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -63,6 +63,8 @@ def get_deployed_sha_from_manifest(check_URL) {
 
 
 def ls_remote_objects_matching_pattern(cmd, strip_leading, pattern) {
+  echo "CALLING LS_REMOTE:"
+  echo cmd
   return bat(returnStdout: true, script: cmd).
     split("\n").
     findAll { it =~ /refs/ }.    // Remove command, and empty blank lines
@@ -72,23 +74,22 @@ def ls_remote_objects_matching_pattern(cmd, strip_leading, pattern) {
 }
 
 
-def print_it(c) { echo "HERE YOU GO: ${c}" }
-
-
 // For notes on the "pattern" args, see "<refs>" comments in https://git-scm.com/docs/git-ls-remote.html.
 def get_untagged_release_branches(branch_pattern, tag_pattern) {
 
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
 
-      def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome ${branch_pattern}"
-      print_it(cmd)
+      def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome ${branch_pattern}\\*"
       echo cmd
+      echo "-------------------------------------------"
+      echo "RAW"
       echo bat(returnStdout: true, script: cmd)
+      echo "-------------------------------------------"
       def list = ls_remote_objects_matching_pattern(cmd, 'refs/heads/', branch_pattern)
       echo "BRANCHES"
       echo "${list}"
       
-      cmd = "git ls-remote --tags https://${U}:${P}@github.com/KlickInc/klick-genome ${tag_pattern}"
+      cmd = "git ls-remote --tags https://${U}:${P}@github.com/KlickInc/klick-genome ${tag_pattern}\\*"
       list = ls_remote_objects_matching_pattern(cmd, 'refs/tags/', tag_pattern)
       echo "TAGS"
       echo "${list}"
