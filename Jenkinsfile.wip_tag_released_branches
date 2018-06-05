@@ -62,8 +62,9 @@ def get_deployed_sha_from_manifest(check_URL) {
 def items_matching_regex(cmd, regex) {
   return bat(returnStdout: true, script: cmd).
     split("\n").
-    findAll { it -> it =~ branch_regex }
+    findAll { it -> it =~ regex }
 }
+
 
 def get_untagged_release_branches(branch_regex, tag_regex) {
 
