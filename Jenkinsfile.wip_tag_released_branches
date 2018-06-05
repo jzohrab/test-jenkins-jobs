@@ -21,8 +21,8 @@ Invoke-RestMethod $request | ConvertFrom-Json
     echo "=================================="
     echo "Calling TRY GETTING SHA:"
     myscript = """
-$ErrorActionPreference = 'SilentlyContinue'
-$request = 'https://genome.klick.com/manifest.json'
+$ErrorActionPreference = 'SilentlyContinue';
+$request = 'https://genome.klick.com/manifest.json';
 Invoke-RestMethod $request | ConvertFrom-Json | select vcs-sha
 """
     echo powershell(returnStdout: true, script: myscript)
