@@ -16,7 +16,7 @@ node('sensei_build') {
       'https://genome.klick.com/'
     ]
 
-    def untagged_release_branches = get_untagged_release_branches(/refs\/heads\/release-\d+/, "genome_\\d+")
+    def untagged_release_branches = get_untagged_release_branches("release-\\d+", "genome_\\d+")
     echo "DEBUG: Untagged release branches: ${untagged_release_branches}"
 
     // Note if there aren't any untagged release branches, we can exit now.
@@ -107,7 +107,7 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
       echo "tags: ${tag_list}"
       echo "shas: ${tag_shas}"
 
-      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_pattern)
+      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', /refs\/heads\/${branch_pattern}/)
       echo "BRANCHES"
       echo "${branch_list}"
 
