@@ -8,7 +8,8 @@ node('sensei_build') {
   try {
 
     def check_URL = 'https://genome.klick.com/'
-    do_curl(check_URL)
+    def sha = do_curl(check_URL)
+    echo "GOT SHA: ${sha}"
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
