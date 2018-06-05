@@ -61,13 +61,13 @@ def get_deployed_sha_from_manifest(check_URL) {
 }
 
 
-def ls_remote_objects_matching_regex(cmd, strip_leading, regex) {
+def ls_remote_objects_matching_pattern(cmd, strip_leading, pattern) {
   return bat(returnStdout: true, script: cmd).
     split("\n").
     findAll { it =~ /refs/ }.    // Remove command, and empty blank lines
     collect { it.split("\t") }
 //    collect { [ it[0], it[1].replace(strip_leading, '') ] }
-//    findAll { it[1] =~ regex }
+//    findAll { it[1] =~ pattern }
 }
 
 
