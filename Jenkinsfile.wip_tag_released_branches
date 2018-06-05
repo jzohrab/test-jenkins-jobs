@@ -63,8 +63,8 @@ def ls_remote_objects_matching_regex(cmd, strip_leading, regex) {
   return bat(returnStdout: true, script: cmd).
     split("\n").
     collect { it.split("\t") }.
-    collect { [ it[0], it[1].replace(strip_leading, '') ] }.
-    findAll { it[1] =~ regex }
+    collect { [ it[0], it[1].replace(strip_leading, '') ] }
+//    findAll { it[1] =~ regex }
 }
 
 
