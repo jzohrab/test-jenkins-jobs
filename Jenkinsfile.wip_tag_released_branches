@@ -45,11 +45,12 @@ def get_deployed_sha_from_manifest(check_URL) {
     def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
     echo "A"
     def tmp = powershell(returnStdout: true, script: myscript).trim()
+    echo "GOT TMP = \"${tmp}\""
     echo "B"
     if (tmp == '') { tmp == null }
     result.sha = tmp
     if (result.sha == null) {
-      result.error = "Missing sha from ${manifest_url}"
+      result.error = "Missing vcs-sha from ${manifest_url}"
     }
     echo "C"
   }
