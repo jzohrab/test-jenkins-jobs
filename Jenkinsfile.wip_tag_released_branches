@@ -12,28 +12,12 @@ node('sensei_build') {
 
   try {
 
-    def check_urls = [
-      'https://genome.klick.com/'
+    genome_release = [
+      sites: ['https://genome.klick.com/'],
+      branch_pattern: "release-\\d+",
+      tag_pattern: "genome_\\d+"
     ]
-
-    def untagged_release_branches = get_untagged_release_branches("release-\\d+", "genome_\\d+")
-    echo "DEBUG: Untagged release branches: ${untagged_release_branches}"
-
-    // Note if there aren't any untagged release branches, we can exit now.
-    
-    def deployed = check_urls.collect { url ->
-      def data = get_deployed_sha_from_manifest(url)
-      [ site: url, sha: data.sha, error: data.error ]
-    }
-    echo "DEBUG: Results: ${deployed}"
-
-    def deployed_shas = deployed.collect { it.sha }
-    echo "DEBUG: Deployed shas: ${deployed_shas}"
-
-    // Check if the SHA has been deployed anywhere.  If yes, this should be tagged.
-    def needs_tag = untagged_release_branches.findAll { deployed_shas.contains(it.sha) }
-
-    echo "DEBUG: untagged and deployed: ${needs_tag}"
+    finalize_release(genome_release)
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -50,6 +34,40 @@ node('sensei_build') {
 
 
 ///////////////////////////////////////
+
+
+// Finalize the release:
+// * tag any untagged release branch that has been deployed
+// * merge into develop and push
+// * merge into master and push
+def finalize_release(args) {
+
+    def untagged = get_untagged_release_branches(args.branch_pattern, args.tag_pattern)
+    if (untagged.size() == 0) {
+      echo "No untagged branches, exiting."
+      return
+    }
+
+    def deployed = args.sites.collect { url ->
+      def data = get_deployed_sha_from_manifest(url)
+      [ site: url, sha: data.sha, error: data.error ]
+    }
+
+    def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
+    def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
+
+    debug_dump_list("Untagged release branches", untagged)
+    debug_dump_list("Deployed", deployed)
+    debug_dump_list("Untagged but deployed", needs_tag)
+}
+
+
+def debug_dump_list(title, items) {
+  echo "DEBUG: ${title}"
+  echo items.collect { "* ${it}" }.join("\n")
+  echo "END_DEBUG: ${title}"
+}
+
 
 
 // Get the sha from the deployed manifest.
@@ -81,37 +99,27 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
   // I tried using <refs> to limit the output of ls-remote, but it didn't work
   // (would filter out all branches/tags).  Getting everything and filtering locally ...
   // wasteful, but it will work.
-
   def data = bat(returnStdout: true, script: cmd).
     split("\n").
     findAll { it =~ pattern }.       // Remove command, and empty blank lines
     findAll { !(it =~ /\^\{\}$/) }.  // ls-remote adds extra lines with "^{}" for tags
     collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
-
-  echo "GOT data = ${data}"
   return data
-//  def ret = data.collect { [ sha: it[0], object: it[1] ] }
-//  echo "GOT ret = ${ret}"
-//  return ret
-
 }
 
 
 def get_untagged_release_branches(branch_pattern, tag_pattern) {
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
-
       def repo_url = "https://${U}:${P}@github.com/${CODE_GITHUB_ORG}/${CODE_REPO_NAME}"
-
       def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', /refs\/tags\/${tag_pattern}/)
       def tag_shas = tag_list.collect { it.sha }
-      echo "tags: ${tag_list}"
-      echo "shas: ${tag_shas}"
-
       def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', /refs\/heads\/${branch_pattern}/)
-      echo "BRANCHES"
-      echo "${branch_list}"
-
       def untagged_branches = branch_list.findAll { !(tag_shas.contains(it.sha)) }
+
+      debug_dump_list("Tags", tag_list)
+      debug_dump_list("Tag shas", tag_shas)
+      debug_dump_list("Branches", branch_list)
+      debug_dump_list("Untagged", untagged_branches)
 
       return untagged_branches
     }
