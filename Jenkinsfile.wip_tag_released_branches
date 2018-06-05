@@ -48,7 +48,7 @@ def get_deployed_sha_from_manifest(check_URL) {
     echo "GOT TMP = \"${tmp}\""
     echo "tmp is null? ${tmp == null}"
     echo "B"
-    if (tmp.trim().length == 0) { tmp == null }
+    if (tmp.trim().size() == 0) { tmp == null }
     result.sha = tmp
     echo "result.sha = \"${result.sha}\""
     echo "result.sha is null? \"${result.sha == null}\""
