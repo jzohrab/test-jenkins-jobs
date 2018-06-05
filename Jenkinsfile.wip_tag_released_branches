@@ -46,9 +46,11 @@ def get_deployed_sha_from_manifest(check_URL) {
     echo "A"
     def tmp = powershell(returnStdout: true, script: myscript).trim()
     echo "GOT TMP = \"${tmp}\""
-    echo "tmp is null? ${tmp == null}"
     echo "B"
+    echo "tmp size = ${tmp.trim().size()}"
     if (tmp.trim().size() == 0) { tmp == null }
+    echo "tmp is null? ${tmp == null}"
+
     result.sha = tmp
     echo "result.sha = \"${result.sha}\""
     echo "result.sha is null? \"${result.sha == null}\""
