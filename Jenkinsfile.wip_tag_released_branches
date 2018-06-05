@@ -11,12 +11,13 @@ node('sensei_build') {
 
     def myscript = ""
     
-//     myscript = """
-// $request = 'https://genome.klick.com/manifest.json'
-// Invoke-RestMethod $request | ConvertFrom-Json
-// """
-//     echo powershell(returnStdout: true, script: myscript)
+    myscript = """
+$request = 'https://genome.klick.com/manifest.json'
+Invoke-RestMethod $request | ConvertFrom-Json
+"""
+    echo powershell(returnStdout: true, script: myscript)
 
+    echo "=================================="
     echo "Calling TRY GETTING SHA:"
     myscript = """
 $request = 'https://genome.klick.com/manifest.json'
