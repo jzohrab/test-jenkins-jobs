@@ -3,6 +3,11 @@
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
 
+
+CODE_GITHUB_ORG = 'KlickInc'
+CODE_REPO_NAME = 'klick-genome'
+
+
 node('sensei_build') {
 
   try {
@@ -11,23 +16,24 @@ node('sensei_build') {
       'https://genome.klick.com/'
     ]
 
-    def results = check_urls.collect { url ->
-      def data = get_deployed_sha_from_manifest(url)
-      [ site: url, sha: data.sha, error: data.error ]
-    }
-
-    echo "DEBUG: Results: ${results}"
-    def deployed_shas = results.collect { it.sha }
-    echo "DEBUG: Deployed shas: ${deployed_shas}"
-
     def untagged_release_branches = get_untagged_release_branches(/refs\/heads\/release-\d+/, /refs\/tags\/genome_\d+/)
     echo "DEBUG: Untagged release branches: ${untagged_release_branches}"
 
-    // Check if the SHA has been deployed anywhere.  If yes, this should be tagged.
-    def untagged_and_deployed = untagged_release_branches.
-      findAll { deployed_shas.contains(it.sha) }
+    // Note if there aren't any untagged release branches, we can exit now.
+    
+    def deployed = check_urls.collect { url ->
+      def data = get_deployed_sha_from_manifest(url)
+      [ site: url, sha: data.sha, error: data.error ]
+    }
+    echo "DEBUG: Results: ${deployed}"
 
-    echo "DEBUG: untagged and deployed: ${untagged_and_deployed}"
+    def deployed_shas = deployed.collect { it.sha }
+    echo "DEBUG: Deployed shas: ${deployed_shas}"
+
+    // Check if the SHA has been deployed anywhere.  If yes, this should be tagged.
+    def needs_tag = untagged_release_branches.findAll { deployed_shas.contains(it.sha) }
+
+    echo "DEBUG: untagged and deployed: ${needs_tag}"
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -94,7 +100,7 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
 def get_untagged_release_branches(branch_pattern, tag_pattern) {
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
 
-      def repo_url = "https://${U}:${P}@github.com/KlickInc/klick-genome"
+      def repo_url = "https://${U}:${P}@github.com/${CODE_GITHUB_ORG}/${CODE_REPO_NAME}"
 
       def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_pattern)
       def tag_shas = tag_list.collect { it.sha }
