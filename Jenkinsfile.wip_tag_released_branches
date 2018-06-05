@@ -61,9 +61,12 @@ def get_deployed_sha_from_manifest(check_URL) {
 
 
 
-def ls_remote_objects_matching_pattern(cmd, pattern) {
-  // echo "CALLING LS_REMOTE:"
-  // echo cmd
+def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
+  def cmd = "git ls-remote ${object_type} ${repo_url}"
+  // I tried using <refs> to limit the output of ls-remote, but it didn't work
+  // (would filter out all branches/tags).  Getting everything and filtering locally ...
+  // wasteful, but it will work.
+
   return bat(returnStdout: true, script: cmd).
     split("\n").
     findAll { it =~ pattern }.       // Remove command, and empty blank lines
@@ -76,20 +79,17 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
 
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
 
-      // I tried using <refs> to limit the output of ls-remote, but it didn't work
-      // (would filter out all branches/tags).  Getting everything and filtering locally ...
-      // wasteful, but it will work.
+      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_pattern)
+      def tag_shas = tag_list.collect { it[0] }
+      echo "tags: ${tag_list}"
+      echo "shas: ${tag_shas}"
 
-      def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome"
-      
-      def list = ls_remote_objects_matching_pattern(cmd, branch_pattern)
+      def repo_url = "https://${U}:${P}@github.com/KlickInc/klick-genome"
+      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_pattern)
       echo "BRANCHES"
-      echo "${list}"
+      echo "${branch_list}"
+
       
-      cmd = "git ls-remote --tags https://${U}:${P}@github.com/KlickInc/klick-genome"
-      list = ls_remote_objects_matching_pattern(cmd, tag_pattern)
-      echo "TAGS"
-      echo "${list}"
     }
 
 }
