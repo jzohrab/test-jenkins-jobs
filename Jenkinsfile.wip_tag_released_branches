@@ -56,9 +56,13 @@ def finalize_release(args) {
     def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
     def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
 
-    debug_dump_list("Untagged release branches", untagged)
     debug_dump_list("Deployed", deployed)
     debug_dump_list("Untagged but deployed", needs_tag)
+
+    if (needs_tag.size() == 0) {
+      echo "No release branches need tagging/merging, exiting."
+      return
+    }
 }
 
 
@@ -116,10 +120,10 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
       def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', /refs\/heads\/${branch_pattern}/)
       def untagged_branches = branch_list.findAll { !(tag_shas.contains(it.sha)) }
 
-      debug_dump_list("Tags", tag_list)
-      debug_dump_list("Tag shas", tag_shas)
+      // debug_dump_list("Tags", tag_list)
+      // debug_dump_list("Tag shas", tag_shas)
       debug_dump_list("Branches", branch_list)
-      debug_dump_list("Untagged", untagged_branches)
+      debug_dump_list("Untagged branches", untagged_branches)
 
       return untagged_branches
     }
