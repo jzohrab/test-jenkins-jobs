@@ -25,7 +25,7 @@ node('sensei_build') {
 
     // Check if the SHA has been deployed anywhere.  If yes, this should be tagged.
     def untagged_and_deployed = untagged_release_branches.
-      findAll(deployed_shas.contains(untagged_release_branches.sha))
+      findAll { deployed_shas.contains(it.sha) }
 
     echo "DEBUG: untagged and deployed: ${untagged_and_deployed}"
 
