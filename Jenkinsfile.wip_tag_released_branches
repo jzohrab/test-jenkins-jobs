@@ -62,8 +62,8 @@ def get_deployed_sha_from_manifest(check_URL) {
 def items_matching_regex(cmd, regex) {
   return bat(returnStdout: true, script: cmd).
     split("\n").
-    collect { it.split(' ') }.
-    findAll { it[1] =~ regex }
+    collect { it.split(' ') }
+  //  findAll { it[1] =~ regex }
 }
 
 
