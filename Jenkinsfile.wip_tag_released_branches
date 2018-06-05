@@ -87,7 +87,7 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
       echo cmd
       echo "-------------------------------------------"
       echo "RAW"
-      def hackcmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome ${branch_pattern}\\\\*"
+      def hackcmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome"
       echo bat(returnStdout: true, script: hackcmd)
       echo "-------------------------------------------"
       def list = ls_remote_objects_matching_pattern(cmd, 'refs/heads/', branch_pattern)
