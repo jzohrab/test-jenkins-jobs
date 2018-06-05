@@ -40,15 +40,21 @@ def get_deployed_sha_from_manifest(check_URL) {
   
   manifest_url = "${check_URL}/manifest.json"
   try {
+    // See https://stackoverflow.com/questions/1408042/output-data-with-no-column-headings-using-powershel
+    // re "-ExpandProperty" flag.
     def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
+    echo "A"
     def tmp = powershell(returnStdout: true, script: myscript).trim()
+    echo "B"
     if (tmp == '') { tmp == null }
     result.sha = tmp
     if (result.sha == null) {
       result.error = "Missing sha from ${manifest_url}"
     }
+    echo "C"
   }
   catch (err) {
+    echo "D"
     result.error = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
   }
   return result
