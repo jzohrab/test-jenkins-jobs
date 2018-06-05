@@ -7,8 +7,6 @@ node('sensei_build') {
 
   try {
 
-  ws("c:\\www\\genome") {
-
     def check_urls = [
       'https://genome.klick.com/'
     ]
@@ -26,8 +24,6 @@ node('sensei_build') {
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
-
-  }  // end workspace
 
   }
   catch(err) {
@@ -76,14 +72,15 @@ def ls_remote_objects_matching_pattern(cmd, strip_leading, pattern) {
 }
 
 
+def print_it(c) { echo c }
+
 // For notes on the "pattern" args, see "<refs>" comments in https://git-scm.com/docs/git-ls-remote.html.
 def get_untagged_release_branches(branch_pattern, tag_pattern) {
 
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
 
-bat "git remote add origin https://${U}:${P}@github.com/KlickInc/klick-genome.git"
-
       def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome ${branch_pattern}"
+      print_it(cmd)
       echo cmd
       echo bat(returnStdout: true, script: cmd)
       def list = ls_remote_objects_matching_pattern(cmd, 'refs/heads/', branch_pattern)
