@@ -7,7 +7,8 @@ node('sensei_build') {
 
   try {
 
-    do_curl()
+    def check_URL = 'https://genome.klick.com/'
+    do_curl(check_URL)
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -24,42 +25,8 @@ node('sensei_build') {
 
 ///////////////////////////////////////
 
-def do_curl() {
-    // powershell curl
-    echo "Calling powershell:"
-
-    def myscript = ""
-
-    def check_URL = 'https://genome.klick.com/'
-    myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
-    echo powershell(returnStdout: true, script: myscript)
-
-    return
-
-    echo "=================================="
-
-    myscript = """
-\$ErrorActionPreference = 'SilentlyContinue'
-\$request = 'https://genome.klick.com/manifest.json'
-Invoke-RestMethod \$request | select vcs-sha
-"""
-    echo powershell(returnStdout: true, script: myscript)
-
-    echo "=================================="
-
-    myscript = """
-\$ErrorActionPreference = 'SilentlyContinue'
-\$request = 'https://genome.klick.com/manifest.json'
-Invoke-RestMethod \$request | ConvertFrom-Json
-"""
-    echo powershell(returnStdout: true, script: myscript)
-
-    echo "=================================="
-    echo "Calling TRY GETTING SHA:"
-    myscript = """
-\$ErrorActionPreference = 'SilentlyContinue';
-\$request = 'https://genome.klick.com/manifest.json';
-Invoke-RestMethod \$request | ConvertFrom-Json | select vcs-sha
-"""
-    echo powershell(returnStdout: true, script: myscript)
+def do_curl(check_URL) {
+    def myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
+    def sha = powershell(returnStdout: true, script: myscript)
+    return sha.trim()
 }
