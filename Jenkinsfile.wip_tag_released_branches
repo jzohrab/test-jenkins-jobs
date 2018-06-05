@@ -63,12 +63,12 @@ def get_untagged_release_branches() {
 
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
       def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome"
-      def list = sh(returnStdout: true, script: cmd)
+      def list = bat(returnStdout: true, script: cmd)
       echo "BRANCHES"
       echo "${list}"
       
       cmd = "git ls-remote --tags https://${U}:${P}@github.com/KlickInc/klick-genome"
-      list = sh(returnStdout: true, script: cmd)
+      list = bat(returnStdout: true, script: cmd)
       echo "TAGS"
       echo "${list}"
     }
