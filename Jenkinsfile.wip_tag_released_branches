@@ -61,7 +61,7 @@ def get_deployed_sha_from_manifest(check_URL) {
 
 
 
-def ls_remote_objects_matching_pattern(cmd, strip_leading, pattern) {
+def ls_remote_objects_matching_pattern(cmd, pattern) {
   // echo "CALLING LS_REMOTE:"
   // echo cmd
   return bat(returnStdout: true, script: cmd).
