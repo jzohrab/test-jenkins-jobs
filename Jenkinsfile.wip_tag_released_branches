@@ -80,6 +80,8 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
 
       def cmd = "git ls-remote --heads https://${U}:${P}@github.com/KlickInc/klick-genome ${branch_pattern}\\*"
+      cmd = "git ls-remote --heads https://jeff-zohrab:5620ef25164b010a98bafe08102700c233469899@github.com/KlickInc/klick-genome release-2\\*"
+
       echo cmd
       echo "-------------------------------------------"
       echo "RAW"
