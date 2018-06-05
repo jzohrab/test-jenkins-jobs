@@ -33,7 +33,7 @@ def do_curl(check_URL, warnings) {
     def sha = null
     try {
       sha = powershell(returnStdout: true, script: myscript).trim()
-      if (sha = null) {
+      if (sha == null) {
         warnings << "Missing sha from ${check_URL}/manifest.json"
       }
     }
