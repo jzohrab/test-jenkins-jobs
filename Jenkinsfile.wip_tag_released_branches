@@ -28,17 +28,21 @@ node('sensei_build') {
 
 ///////////////////////////////////////
 
-def do_curl(check_URL, warnings) {
-    def myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
+
+// Get the sha from the deployed manifest, collecting warnings.
+def get_deployed_sha_from_manifest(check_URL, warnings) {
+    manifest_url = "${check_URL}/manifest.json"
+    def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
     def sha = null
     try {
       sha = powershell(returnStdout: true, script: myscript).trim()
+      if (sha == '') { sha == null }
       if (sha == null) {
-        warnings << "Missing sha from ${check_URL}/manifest.json"
+        warnings << "Missing sha from ${manifest_url}"
       }
     }
     catch (err) {
-      msg = "Error getting sha from ${check_URL}: ${err}"
+      msg = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
       echo msg
       warnings << msg
       echo "Suppressing and continuing"
