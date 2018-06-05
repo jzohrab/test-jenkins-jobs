@@ -18,9 +18,7 @@ node('sensei_build') {
 
     echo "Results: ${results}"
 
-    // Appending "-2" to the end of the branch and tag names
-    // to differentiate the "release" branch from the "release-sensei" branch.
-    get_untagged_release_branches(/refs\/heads\/release-2/, /refs\/tags/\/genome_2/)
+    get_untagged_release_branches(/refs\/heads\/release-\d+/, /refs\/tags\/genome_\d+/)
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
