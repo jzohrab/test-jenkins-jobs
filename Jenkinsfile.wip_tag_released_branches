@@ -71,12 +71,14 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
     split("\n").
     findAll { it =~ pattern }.       // Remove command, and empty blank lines
     findAll { !(it =~ /\^\{\}$/) }.  // ls-remote adds extra lines with "^{}" for tags
-    collect { it.split("\t") }
+    collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
 
   echo "GOT data = ${data}"
-  def ret = data.collect { [ sha: it[0], object: it[1] ] }
-  echo "GOT ret = ${ret}"
-  return ret
+  return data
+//  def ret = data.collect { [ sha: it[0], object: it[1] ] }
+//  echo "GOT ret = ${ret}"
+//  return ret
+
 }
 
 
