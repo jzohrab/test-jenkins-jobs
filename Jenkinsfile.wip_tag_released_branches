@@ -3,7 +3,7 @@
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
 
-def DEBUG_LOG = []
+DEBUG_LOG = []
 
 node('sensei_build') {
 
