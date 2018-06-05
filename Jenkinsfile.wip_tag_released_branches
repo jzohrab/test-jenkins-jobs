@@ -30,11 +30,8 @@ def do_curl() {
 
     def myscript = ""
 
-    myscript = """
-\$ErrorActionPreference = 'SilentlyContinue'
-\$request = 'https://genome.klick.com/manifest.json'
-Invoke-WebRequest \$request | ConvertFrom-Json | Select -ExpandProperty vcs-sha
-"""
+    def check_URL = 'https://genome.klick.com/'
+    myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
     echo powershell(returnStdout: true, script: myscript)
 
     return
