@@ -8,6 +8,7 @@ def DEBUG_LOG = []
 node('sensei_build') {
 
   try {
+    DEBUG_LOG << "OK"
     def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     senseislack.post_success(msg)
   }
@@ -15,8 +16,15 @@ node('sensei_build') {
     def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
     senseislack.post_failure(msg)
   }
+  finally {
+    post_debug_log()
+  }
 }
 
 
 ///////////////////////////////////////
 
+def post_debug_log() {
+  def body = DEBUG_LOG.collect { "* ${it} " }.join("\n")
+  def msg = [ subject: 'Debug', body: body, channel: 'jenkins-dev-tests' ]
+}
