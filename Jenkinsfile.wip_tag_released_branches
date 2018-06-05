@@ -10,7 +10,16 @@ node('sensei_build') {
     echo "Calling powershell:"
 
     def myscript = ""
-    
+
+    myscript = """
+\$ErrorActionPreference = 'SilentlyContinue'
+\$request = 'https://genome.klick.com/manifest.json'
+Invoke-RestMethod \$request
+"""
+    echo powershell(returnStdout: true, script: myscript)
+
+    echo "=================================="
+
     myscript = """
 \$ErrorActionPreference = 'SilentlyContinue'
 \$request = 'https://genome.klick.com/manifest.json'
@@ -34,8 +43,8 @@ Invoke-RestMethod \$request | ConvertFrom-Json | select vcs-sha
     echo "FAILED: ${err}"
     currentBuild.result = 'FAILURE'
     
-    def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
-    senseislack.post_failure(msg)
+    // def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
+    // senseislack.post_failure(msg)
   }
 }
 
