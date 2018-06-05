@@ -14,7 +14,7 @@ node('sensei_build') {
     myscript = """
 \$ErrorActionPreference = 'SilentlyContinue'
 \$request = 'https://genome.klick.com/manifest.json'
-Invoke-RestMethod $request | ConvertFrom-Json
+Invoke-RestMethod \$request | ConvertFrom-Json
 """
     echo powershell(returnStdout: true, script: myscript)
 
@@ -23,7 +23,7 @@ Invoke-RestMethod $request | ConvertFrom-Json
     myscript = """
 \$ErrorActionPreference = 'SilentlyContinue';
 \$request = 'https://genome.klick.com/manifest.json';
-Invoke-RestMethod $request | ConvertFrom-Json | select vcs-sha
+Invoke-RestMethod \$request | ConvertFrom-Json | select vcs-sha
 """
     echo powershell(returnStdout: true, script: myscript)
 
