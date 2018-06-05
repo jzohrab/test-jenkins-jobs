@@ -7,7 +7,7 @@ node('sensei_build') {
 
   try {
 
-    def check_URL = 'https://genome.klic2k.com/'
+    def check_URL = 'https://genome.klick.com/'
     def warnings = []
     def sha = do_curl(check_URL, warnings)
     echo "GOT SHA: ${sha}"
