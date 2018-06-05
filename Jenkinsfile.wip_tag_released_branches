@@ -6,10 +6,40 @@ def senseislack = new org.klick.SenseiSlack()
 node('sensei_build') {
 
   try {
+
+    do_curl()
+
+    // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
+    // senseislack.post_success(msg)
+  }
+  catch(err) {
+    echo "FAILED: ${err}"
+    currentBuild.result = 'FAILURE'
+    
+    // def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
+    // senseislack.post_failure(msg)
+  }
+}
+
+
+///////////////////////////////////////
+
+def do_curl() {
     // powershell curl
     echo "Calling powershell:"
 
     def myscript = ""
+
+    myscript = """
+\$ErrorActionPreference = 'SilentlyContinue'
+\$request = 'https://genome.klick.com/manifest.json'
+Invoke-RestMethod \$request
+"""
+    echo powershell(returnStdout: true, script: myscript)
+
+    return
+
+    echo "=================================="
 
     myscript = """
 \$ErrorActionPreference = 'SilentlyContinue'
@@ -35,19 +65,4 @@ Invoke-RestMethod \$request | ConvertFrom-Json
 Invoke-RestMethod \$request | ConvertFrom-Json | select vcs-sha
 """
     echo powershell(returnStdout: true, script: myscript)
-
-    // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
-    // senseislack.post_success(msg)
-  }
-  catch(err) {
-    echo "FAILED: ${err}"
-    currentBuild.result = 'FAILURE'
-    
-    // def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
-    // senseislack.post_failure(msg)
-  }
 }
-
-
-///////////////////////////////////////
-
