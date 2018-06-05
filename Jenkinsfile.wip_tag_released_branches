@@ -1,0 +1,22 @@
+// Curl site
+
+@Library('genome') _
+def senseislack = new org.klick.SenseiSlack()
+
+def DEBUG_LOG = []
+
+node('sensei_build') {
+
+  try {
+    def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
+    senseislack.post_success(msg)
+  }
+  catch(err) {
+    def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
+    senseislack.post_failure(msg)
+  }
+}
+
+
+///////////////////////////////////////
+
