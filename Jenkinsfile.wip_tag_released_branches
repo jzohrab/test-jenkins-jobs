@@ -9,14 +9,16 @@ node('sensei_build') {
     // powershell curl
     echo "Calling powershell:"
 
-    def myscript = """
+    def myscript = ""
+    
+    myscript = """
 $request = 'https://genome.klick.com/manifest.json'
 Invoke-RestMethod $request | ConvertFrom-Json
 """
     echo powershell(returnStdout: true, script: myscript)
 
     echo "Calling TRY GETTING SHA:"
-    def myscript = """
+    myscript = """
 $request = 'https://genome.klick.com/manifest.json'
 Invoke-RestMethod $request | ConvertFrom-Json | select vcs-sha
 """
