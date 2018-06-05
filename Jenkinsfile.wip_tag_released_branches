@@ -102,7 +102,7 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
 
       def repo_url = "https://${U}:${P}@github.com/${CODE_GITHUB_ORG}/${CODE_REPO_NAME}"
 
-      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_pattern)
+      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', /refs\/tags\/${tag_pattern}/)
       def tag_shas = tag_list.collect { it.sha }
       echo "tags: ${tag_list}"
       echo "shas: ${tag_shas}"
