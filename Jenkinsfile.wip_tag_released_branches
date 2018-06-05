@@ -67,12 +67,16 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
   // (would filter out all branches/tags).  Getting everything and filtering locally ...
   // wasteful, but it will work.
 
-  return bat(returnStdout: true, script: cmd).
+  def data = bat(returnStdout: true, script: cmd).
     split("\n").
     findAll { it =~ pattern }.       // Remove command, and empty blank lines
     findAll { !(it =~ /\^\{\}$/) }.  // ls-remote adds extra lines with "^{}" for tags
-    collect { it.split("\t") }.
-    collect { [ sha: it[0], object: it[1] ] }
+    collect { it.split("\t") }
+
+  echo "GOT data = ${data}"
+  def ret = data.collect { [ sha: it[0], object: it[1] ] }
+  echo "GOT ret = ${ret}"
+  return ret
 }
 
 
