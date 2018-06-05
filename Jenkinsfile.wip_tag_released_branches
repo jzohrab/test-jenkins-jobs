@@ -46,9 +46,13 @@ def get_deployed_sha_from_manifest(check_URL) {
     echo "A"
     def tmp = powershell(returnStdout: true, script: myscript).trim()
     echo "GOT TMP = \"${tmp}\""
+    echo "tmp is null? ${tmp == null}"
     echo "B"
     if (tmp == '') { tmp == null }
     result.sha = tmp
+    echo "result.sha = \"${result.sha}\""
+    echo "result.sha is null? \"${result.sha == null}\""
+    
     if (result.sha == null) {
       result.error = "Missing vcs-sha from ${manifest_url}"
     }
