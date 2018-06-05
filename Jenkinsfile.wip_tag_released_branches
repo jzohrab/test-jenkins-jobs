@@ -18,7 +18,6 @@ node('sensei_build') {
 
     echo "Results: ${results}"
 
-    get_untagged_release_branches()
     get_untagged_release_branches(/release-\d+/, /genome_\d+/)
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
