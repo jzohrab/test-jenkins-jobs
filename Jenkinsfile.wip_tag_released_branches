@@ -7,11 +7,11 @@ node('sensei_build') {
 
   try {
     // powershell curl
-    def script = """
+    def myscript = """
 $request = 'https://genome.klick.com/manifest.json'
 Invoke-RestMethod $request | ConvertFrom-Json | select vcs-sha
 """
-    powershell script
+    echo powershell(returnStdout: true, script: myscript)
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
