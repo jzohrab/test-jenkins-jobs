@@ -27,7 +27,7 @@ node('sensei_build') {
 ///////////////////////////////////////
 
 def do_curl(check_URL) {
-    def myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
+    def myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
     def sha = powershell(returnStdout: true, script: myscript)
     return sha.trim()
 }
