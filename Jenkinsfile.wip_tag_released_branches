@@ -31,6 +31,9 @@ Invoke-RestMethod $request | ConvertFrom-Json | select vcs-sha
     // senseislack.post_success(msg)
   }
   catch(err) {
+    echo "FAILED: ${err}"
+    currentBuild.result = 'FAILURE'
+    
     def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
     senseislack.post_failure(msg)
   }
