@@ -1,0 +1,157 @@
+// Cancels queued builds if there is another build for the same branch
+// later in the queue.
+//
+// This does not cancel jobs that are already executing.
+//
+// Refs:
+// * https://stackoverflow.com/questions/12305244/
+//     cancel-queued-builds-and-aborting-executing-builds-using-groovy-for-jenkins
+// (Initial article ... the code in this job is completely different from the above).
+
+
+import jenkins.model.*;
+import hudson.model.*
+// import hudson.model.Result
+// import jenkins.model.CauseOfInterruption
+
+
+SLACK_CHANNEL = '#jenkins-dev-tests'
+
+
+// Run this on master, as it knows what's scheduled.
+node('master') {
+  try {
+    def job_regexes = [
+      /job\/branch_pipeline\/job/,
+      /job\/Sensei\/job\/klick-genome\/job/
+    ]
+    prune_stale_jobs(job_regexes)
+  }
+  catch(err) {
+    echo "Error: ${err}"
+    currentBuild.result = 'FAILURE'
+    report_failure("Error: ${err.message}")
+  }
+}
+
+////////////////////////////////////////////////
+
+
+def prune_stale_jobs(job_regex_list) {
+
+  stage('Clean queue') {
+    def exclude_branches = ['develop', 'master']
+
+    // Note this stage refers directly to "Jenkins.instance.queue".
+    // Trying to def a variable (i.e., "def queue = Jenkins.instance.queue"),
+    // leads to "java.io.NotSerializableException: hudson.model.Queue".
+    def prune_jobs = []
+    for (job_re in job_regex_list) {
+      echo "Scanning ${job_re}"
+      prune_jobs += get_jobs_to_prune(Jenkins.instance.queue, job_re, exclude_branches)
+    }
+
+    def successfully_pruned = []
+    for (j in prune_jobs) {
+      try {
+        echo "Cancelling ${j.branch} #${j.run_number}"
+        Jenkins.instance.queue.doCancelItem(j.id)
+        successfully_pruned << j
+      }
+      catch(err) {
+        echo "Error during prune of ${j}, ignoring. (${err})"
+      }
+    }
+
+    if (successfully_pruned.size() > 0) {
+      send_slack_message(successfully_pruned)
+    }
+
+  }  // end stage
+  
+}
+
+
+def get_jobs_to_prune(queue, job_regex, exclude_branches) {
+  def queued = queue.items.
+    findAll { i -> i.task.url =~ job_regex }.
+    collect { transform_for_pruning(it) }
+
+  def map_branch_to_latest = latest_run_number_per_branch(queued)
+
+  echo "Queued (${job_regex}):"
+  echo queued.collect { "* ${it}" }.join("\n")
+  echo "Latest (${job_regex}):"
+  echo map_branch_to_latest.collect { b, latest -> "* ${b} = ${latest}" }.join("\n")
+
+  def prune_jobs = queued.
+    findAll { !exclude_branches.contains(it.branch) }.
+    findAll { it.run_number.toInteger() != map_branch_to_latest[it.branch] }.
+    collect { it.latest = map_branch_to_latest[it.branch]; it }
+  echo "Will prune ${prune_jobs.size()} items (${job_regex})"
+  echo prune_jobs.collect { "* ${it}" }.join("\n")
+  
+  return prune_jobs
+}
+
+
+// Convert queue item to simpler hash
+def transform_for_pruning(queue_item) {
+  // A queued task's URL looks like this:
+  // job/branch_pipeline/job/develop/104/
+  // get the branch (develop) and run_number (104)
+  def tmp = queue_item.task.url.split('/')
+  return [
+    id: queue_item.id,
+    branch: tmp[-2].replace('%252F', '/'),
+    run_number: tmp[-1]
+  ]
+}
+
+
+def latest_run_number_per_branch(queued) {
+  def map_branch_name_to_latest = [:]
+  queued.each {
+    def curr_latest_run = map_branch_name_to_latest.get(it.branch, 0)
+    def queued_run_number = it.run_number.toInteger()
+    if (queued_run_number > curr_latest_run) {
+      map_branch_name_to_latest[it.branch] = queued_run_number
+    }
+  }
+  return map_branch_name_to_latest
+}
+
+
+def send_slack_message(prune_jobs) {
+
+  def cancelled_msg = prune_jobs.collect {
+    "* ${it.branch} #${it.run_number} (id: ${it.id}) in favor of run #${it.latest}"
+  }.sort().join("\n")
+
+  def msg = """*Jenkins queue pruned.*
+
+${cancelled_msg}
+
+${env.Job_URL} (number ${currentBuild.number})"""
+
+  slackSend channel: SLACK_CHANNEL,
+    color: '#008000',
+    message: msg,
+    teamDomain: 'senseilabs',
+    tokenCredentialId: 'senseilabs-slack-token'
+}
+
+
+def report_failure(content) {
+  def failure_msg = """*Jenkins queue prune failed.*
+
+${content}
+
+${env.Job_URL} (number ${currentBuild.number})"""
+
+  slackSend channel: SLACK_CHANNEL,
+    color: '#ff0000',
+    message: failure_msg,
+    teamDomain: 'senseilabs',
+    tokenCredentialId: 'senseilabs-slack-token'
+}
