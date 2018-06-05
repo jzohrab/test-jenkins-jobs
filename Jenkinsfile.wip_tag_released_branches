@@ -16,7 +16,7 @@ node('sensei_build') {
       'https://genome.klick.com/'
     ]
 
-    def untagged_release_branches = get_untagged_release_branches(/refs\/heads\/release-\d+/, /refs\/tags\/genome_\d+/)
+    def untagged_release_branches = get_untagged_release_branches(/refs\/heads\/release-\d+/, "genome_\\d+")
     echo "DEBUG: Untagged release branches: ${untagged_release_branches}"
 
     // Note if there aren't any untagged release branches, we can exit now.
