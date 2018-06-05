@@ -12,12 +12,23 @@ node('sensei_build') {
 
   try {
 
+    finalize_branches = []
+    
     genome_release = [
       sites: ['https://genome.klick.com/'],
       branch_pattern: "release-\\d+",
-      tag_pattern: "genome_\\d+"
+      tag_pattern: "genome_\\d+",
+      add_tag: "NEWTAGHERE"
     ]
-    finalize_release(genome_release)
+    finalize_branches << branches_to_finalize(genome_release)
+
+    // TODO: Sensei launches
+    
+    if (finalize_branches.size() == 0) {
+      echo "No release branches need tagging/merging, exiting."
+      return
+    }
+
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -36,11 +47,8 @@ node('sensei_build') {
 ///////////////////////////////////////
 
 
-// Finalize the release:
-// * tag any untagged release branch that has been deployed
-// * merge into develop and push
-// * merge into master and push
-def finalize_release(args) {
+// Get branches needing tags and merge
+def branches_to_finalize(args) {
 
     def untagged = get_untagged_release_branches(args.branch_pattern, args.tag_pattern)
     if (untagged.size() == 0) {
@@ -59,10 +67,16 @@ def finalize_release(args) {
     debug_dump_list("Deployed", deployed)
     debug_dump_list("Untagged but deployed", needs_tag)
 
-    if (needs_tag.size() == 0) {
-      echo "No release branches need tagging/merging, exiting."
-      return
-    }
+    return needs_tag.collect { it.add_tag = args.add_tag; it }
+}
+
+
+// Finalize the release:
+// * tag any untagged release branch that has been deployed
+// * merge into develop and push
+// * merge into master and push
+def finalize_release(args) {
+  echo "TODO"
 }
 
 
