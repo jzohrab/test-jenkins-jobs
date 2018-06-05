@@ -33,7 +33,7 @@ def do_curl() {
     myscript = """
 \$ErrorActionPreference = 'SilentlyContinue'
 \$request = 'https://genome.klick.com/manifest.json'
-Invoke-WebRequest \$request
+Invoke-WebRequest \$request | ConvertFrom-Json
 """
     echo powershell(returnStdout: true, script: myscript)
 
