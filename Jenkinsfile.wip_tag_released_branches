@@ -16,9 +16,18 @@ node('sensei_build') {
       [ site: url, sha: data.sha, error: data.error ]
     }
 
-    echo "Results: ${results}"
+    echo "DEBUG: Results: ${results}"
+    def deployed_shas = results.collect { it.sha }
+    echo "DEBUG: Deployed shas: ${deployed_shas}"
 
-    get_untagged_release_branches(/refs\/heads\/release-\d+/, /refs\/tags\/genome_\d+/)
+    def untagged_release_branches = get_untagged_release_branches(/refs\/heads\/release-\d+/, /refs\/tags\/genome_\d+/)
+    echo "DEBUG: Untagged release branches: ${untagged_release_branches}"
+
+    // Check if the SHA has been deployed anywhere.  If yes, this should be tagged.
+    def untagged_and_deployed = untagged_release_branches.
+      findAll(deployed_shas.contains(untagged_release_branches.sha))
+
+    echo "DEBUG: untagged and deployed: ${untagged_and_deployed}"
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -83,7 +92,6 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
 
 
 def get_untagged_release_branches(branch_pattern, tag_pattern) {
-
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
 
       def repo_url = "https://${U}:${P}@github.com/KlickInc/klick-genome"
@@ -98,9 +106,9 @@ def get_untagged_release_branches(branch_pattern, tag_pattern) {
       echo "${branch_list}"
 
       def untagged_branches = branch_list.findAll { !(tag_shas.contains(it.sha)) }
-      echo "Got untagged: ${untagged_branches}"
-      
-    }
 
+      return untagged_branches
+    }
 }
     
+
