@@ -66,7 +66,7 @@ def ls_remote_objects_matching_pattern(cmd, pattern) {
   // echo cmd
   return bat(returnStdout: true, script: cmd).
     split("\n").
-    findAll { it =~ /refs/ }.    // Remove command, and empty blank lines
+    findAll { it =~ pattern }.    // Remove command, and empty blank lines
     collect { it.split("\t") }
 }
 
