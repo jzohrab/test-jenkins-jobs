@@ -30,11 +30,11 @@ def do_curl(check_URL) {
     def myscript = "Invoke-WebRequest ${check_URL}/manifest.json | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
     def sha = null
     try {
-      def sha = powershell(returnStdout: true, script: myscript).trim()
+      sha = powershell(returnStdout: true, script: myscript).trim()
     }
     catch (err) {
       echo "Error getting sha from ${check_URL}: ${err}"
       echo "Suppressing and continuing"
     }
-    return sha.trim()
+    return sha
 }
