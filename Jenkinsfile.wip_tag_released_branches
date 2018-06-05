@@ -7,11 +7,16 @@ node('sensei_build') {
 
   try {
 
-    def check_URL = 'https://genome.klick.com/'
-    def warnings = []
-    def sha = get_deployed_sha_from_manifest(check_URL, warnings)
-    echo "GOT SHA: ${sha}"
-    echo "warnings: ${warnings}"
+    def check_urls = [
+      'https://genome.klick.com/'
+    ]
+
+    def results = check_urls.collect {
+      def data = get_deployed_sha_from_manifest(check_URL)
+      [ site: it, sha: data.sha, error: data.error ]
+    }
+
+    echo "Results: ${results}"
     
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -29,23 +34,22 @@ node('sensei_build') {
 ///////////////////////////////////////
 
 
-// Get the sha from the deployed manifest, collecting warnings.
-def get_deployed_sha_from_manifest(check_URL, warnings) {
-    manifest_url = "${check_URL}/manifest.json"
+// Get the sha from the deployed manifest.
+def get_deployed_sha_from_manifest(check_URL) {
+  def result = [ sha: null, error: null ]
+  
+  manifest_url = "${check_URL}/manifest.json"
+  try {
     def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-shaxxx"
-    def sha = null
-    try {
-      sha = powershell(returnStdout: true, script: myscript).trim()
-      if (sha == '') { sha == null }
-      if (sha == null) {
-        warnings << "Missing sha from ${manifest_url}"
-      }
+    def tmp = powershell(returnStdout: true, script: myscript).trim()
+    if (tmp == '') { tmp == null }
+    result.sha = tmp
+    if (result.sha == null) {
+      result.error = "Missing sha from ${manifest_url}"
     }
-    catch (err) {
-      msg = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
-      echo msg
-      warnings << msg
-      echo "Suppressing and continuing"
-    }
-    return sha
+  }
+  catch (err) {
+    result.error = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
+  }
+  return result
 }
