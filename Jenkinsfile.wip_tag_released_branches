@@ -51,6 +51,11 @@ node('sensei_build') {
     echo "Try using the github API now"
 
     // https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
+    finalize_branches.each { b ->
+      echo "Finalizing ${b}"
+      finalize_release(b)
+    }
+
 
 //    githelper.add_remote(blah)
 //    githelper.fetch('origin', 'develop')
@@ -111,7 +116,25 @@ def branches_to_finalize(args) {
 // * merge into develop and push
 // * merge into master and push
 def finalize_release(args) {
-  echo "TODO"
+  def github_merge_powershell = ""
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
+
+  def myscript = ""
+  withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
+    myscript = """
+\$Base64Token = [System.Convert]::ToBase64String([char[]]'${U}:${P}');
+\$Headers = @{ Authorization = 'Basic {0}' -f \$Base64Token };
+\$params = @{
+    "base" = "master";
+    "head" = "${args.add_tag}";
+    "commit_message" = "merging tag";
+  } | ConvertTo-Json
+
+Invoke-WebRequest -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
+"""
+  } // end with
+  def tmp = powershell(returnStdout: true, script: myscript).trim()
+  echo tmp
 }
 
 
