@@ -114,30 +114,45 @@ def branches_to_finalize(args) {
 // * tag any untagged release branch that has been deployed
 // * merge into develop and push
 // * merge into master and push
-//
-//
-// Ref: https://channel9.msdn.com/Blogs/trevor-powershell/
-//   Automating-the-GitHub-REST-API-Using-PowerShell
-//
 def finalize_release(args) {
-  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
-  def commit_msg = "Merging ${args.add_tag} into master"
+  for (b in ['develop', 'master']) {
+    def merge_args = [
+      sha: args.sha,
+      base_branch: b,
+      commit_message: "Merging ${args.add_tag} into ${b}",
+      code_repo_name: args.code_repo_name,
+      code_github_org: args.code_github_org,
+      creds_id: 'github_ci'
+    ]
+    github_api_merge(merge_args)
+  }
+}
 
+
+
+// Merge the sha into the base branch.
+//
+// GitHub API only allows for merging by branch or sha.
+// Refs:
+// * https://developer.github.com/v3/repos/merging/
+// * https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
+def github_api_merge(args)
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
   def auth_token = "user:github_token"
-  withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
+  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
     auth_token = "${U}:${P}"
   }
 
-  // Note: we're using """ string for interpolation,
-  // so we have to escape the powershell "$" (e.g., "\$Headers = '...'").
+  // Note: """ multiline interpolated strings means
+  // we have to escape the powershell "$" (e.g., "\$Headers = '...'").
   def merge_script = """
 \$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
 \$Headers = @{ Authorization = \$basic_auth };
 
 \$params = @{
-  "base" = "eemaster";
+  "base" = "${args.base_branch}";
   "head" = "${args.sha}";
-  "commit_message" = "${commit_msg}";
+  "commit_message" = "${args.commit_message}";
 }
 
 # Use TLS 1.2 (ref https://stackoverflow.com/questions/41618766/)
@@ -161,17 +176,6 @@ write-output "FINAL_StatusCode: \${status_code}"
     findAll { it =~ /FINAL_StatusCode/ }.
     collect { it.replace('FINAL_StatusCode: ', '') }[0]
   echo "Status code ${status_code}"
-
-  // See https://developer.github.com/v3/repos/merging/
-  // for description of status codes.
-  def SUCCESS_CREATED = '201'
-  def SUCCESS_ALREADY_MERGED = '204'
-  if (status_code == SUCCESS_CREATED || status_code == SUCCESS_ALREADY_MERGED ) {
-    return true
-  } else {
-    return false
-  }
-
 }
 
 
