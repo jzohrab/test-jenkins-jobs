@@ -242,9 +242,9 @@ def github_api_merge(args) {
 
   def body_string = """
   {
-      "base": ${args.base_branch}",
-      "head": ${args.sha}",
-      "commit_message": ${args.commit_message}"
+      "base": "${args.base_branch}",
+      "head": "${args.sha}",
+      "commit_message": "${args.commit_message}"
   }
   """
 
