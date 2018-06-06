@@ -50,6 +50,8 @@ node('sensei_build') {
     // https://developer.github.com/v3/repos/merging/
     echo "Try using the github API now"
 
+    // https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
+
 //    githelper.add_remote(blah)
 //    githelper.fetch('origin', 'develop')
 //    githelper.fetch('origin', 'master')
@@ -166,10 +168,19 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
 def get_untagged_release_branches(args) {
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
       def repo_url = "https://${U}:${P}@github.com/${args.code_github_org}/${args.code_repo_name}"
-      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', /refs\/tags\/${args.tag_pattern}/)
+      def tag_regex = /refs\/tags\/${args.tag_pattern}/
+      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_regex)
       def tag_shas = tag_list.collect { it.sha }
-      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', /refs\/heads\/${args.branch_pattern}/)
-      def untagged_branches = branch_list.findAll { !(tag_shas.contains(it.sha)) }
+
+      def branch_regex = /refs\/heads\/${args.branch_pattern}/
+      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_regex)
+      def untagged_branches = branch_list.
+        findAll { !(tag_shas.contains(it.sha)) }.
+	collect {
+	  it.code_repo_name = args.code_repo_name
+	  it.code_github_org = args.code_github_org
+	  it
+	}
 
       // debug_dump_list("Tags", tag_list)
       // debug_dump_list("Tag shas", tag_shas)
