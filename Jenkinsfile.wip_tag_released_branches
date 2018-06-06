@@ -533,12 +533,12 @@ class HttpResponse {
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
 
-        echo "STATUS CODE = ${statusCode}"
+        this.printDebug("DEBUG StatusCode = ${statusCode}");
         if(statusCode == 200 || statusCode == 201){
-            echo "getting content"
+            this.printDebug("DEBUG getting content");
             this.body = connection.content.text;//this would fail the pipeline if there was a 400    
         }else{
-            echo "SETTING FAILURE, getting error stream"
+            this.printDebug("DEBUG setting failure, getting error stream");
             this.failure = true;    
             this.body = connection.getErrorStream().text;    
         }    
