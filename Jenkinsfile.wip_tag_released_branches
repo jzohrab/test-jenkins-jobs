@@ -23,7 +23,7 @@ node('sensei_build') {
       tag_pattern: "genome_\\d+",
       add_tag: "NEWTAGHERE"
     ]
-    finalize_branches << branches_to_finalize(genome_release)
+    finalize_branches += branches_to_finalize(genome_release)
 
     // TODO: Sensei launches
 
