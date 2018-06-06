@@ -534,7 +534,7 @@ class HttpResponse {
         this.message = connection.responseMessage;    
 
         this.printDebug("DEBUG StatusCode = ${statusCode}");
-        if(statusCode == 200 || statusCode == 201){
+        if( statusCode == 200 || statusCode == 201 || statusCode == 204 ){
             this.printDebug("DEBUG getting content");
             this.body = connection.content.text;//this would fail the pipeline if there was a 400    
         }else{
