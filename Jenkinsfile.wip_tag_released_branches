@@ -114,44 +114,43 @@ def branches_to_finalize(args) {
 // * tag any untagged release branch that has been deployed
 // * merge into develop and push
 // * merge into master and push
+//
+//
+// Ref: https://channel9.msdn.com/Blogs/trevor-powershell/
+//   Automating-the-GitHub-REST-API-Using-PowerShell
+//
 def finalize_release(args) {
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
+  def commit_msg = "Merging ${args.add_tag} into master"
 
-  def token = "user:github_token"
+  def auth_token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
-    token = "${U}:${P}"
+    auth_token = "${U}:${P}"
   }
 
-  // Groovy headaches: using """ string so that I can interpolate values,
-  // but since we need to declare powershell variables, we have to escape
-  // the powershell dollar signs (e.g., "\$Headers = '...'").
-  //
-  // Powershell and GitHub API: see
-  // https://channel9.msdn.com/Blogs/trevor-powershell/
-  //   Automating-the-GitHub-REST-API-Using-PowerShell
-  //
-  // re [Net.ServicePointManager] line, see 
-  // Ref: https://stackoverflow.com/questions/41618766/
-  //   powershell-invoke-webrequest-fails-with-ssl-tls-secure-channe
-
-  def myscript = """
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-\$Headers = @{
-  Authorization = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${token}')
-};
-# write-output \$Headers;
+  // Note: we're using """ string for interpolation,
+  // so we have to escape the powershell "$" (e.g., "\$Headers = '...'").
+  def merge_api_call = """
+\$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
+\$Headers = @{ Authorization = \$basic_auth };
 
 \$params = @{
-    "base" = "master";
-    "head" = "${args.sha}";
-    "commit_message" = "Merging ${args.add_tag} into master";
-  } | ConvertTo-Json
+  "base" = "master";
+  "head" = "${args.sha}";
+  "commit_message" = "${commit_message}";
+}
 
-\$response = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
+# Use TLS 1.2 (ref https://stackoverflow.com/questions/41618766/)
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+\$response = Invoke-WebRequest `
+  -Headers \$Headers `
+  -Uri ${uri} `
+  -Method POST `
+  -Body (\$params | ConvertTo-Json) `
+  -ContentType "application/json"
+\$status_code = \$response | Select-Object -ExpandProperty StatusCode
 
 write-output \$response
-\$status_code = \$response | Select-Object -ExpandProperty StatusCode
 write-output "FINAL_StatusCode: \${status_code}"
 """
 
