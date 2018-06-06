@@ -311,16 +311,6 @@ def github_api_merge(args) {
 }
 
 
-def debug_dump_list(title, items) {
-  def content = items.collect { "  * ${it}" }.join("\n")
-  echo """-----------------
-DEBUG: ${title} (${items.size()} items):
-${content}
-END_DEBUG: ${title}
---------------------"""
-}
-
-
 ///////////////////////////////////////////////////////////
 // POWERSHELL
 
@@ -372,6 +362,9 @@ write-output "FINAL_StatusCode: \${status_code}"
 }
 
 
+//// END POWERSHELL
+
+
 def debug_dump_list(title, items) {
   def content = items.collect { "  * ${it}" }.join("\n")
   echo """-----------------
@@ -380,8 +373,6 @@ ${content}
 END_DEBUG: ${title}
 --------------------"""
 }
-
-//// END POWERSHELL
 
 
 // Get the sha from the deployed manifest.
