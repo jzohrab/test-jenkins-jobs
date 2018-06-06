@@ -18,7 +18,7 @@ node('sensei_build') {
       code_repo_name: 'klick-genome-CI-stub',
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
-      add_tag: "TESTINGTAG"
+      add_tag: make_tag_name("genome_")
     ]
     // TODO: have this return a struct, with branches and errors member
     // so can report a slack warning if there are errors.
@@ -30,7 +30,7 @@ node('sensei_build') {
       repo_name: 'klick-genome',
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
-      add_tag: "NEWTAGHERE"
+      add_tag: make_tag_name("genome_")
     ]
     // finalize_branches += branches_to_finalize(genome_release)
 
@@ -81,6 +81,14 @@ node('sensei_build') {
 ///////////////////////////////////////
 
 
+def make_tag_name(tag_start) {
+  def dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
+  def date = new Date()
+  def tagname = tag_start + dateFormat.format(date)
+  return tagname
+}
+
+
 // Get branches needing tags and merge
 def branches_to_finalize(args) {
 
@@ -102,14 +110,6 @@ def branches_to_finalize(args) {
     debug_dump_list("Untagged but deployed", needs_tag)
 
     return needs_tag.collect { it.add_tag = args.add_tag; it }
-}
-
-
-def make_tag_name(tag_start) {
-  def dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
-  def date = new Date()
-  def tagname = tag_start + dateFormat.format(date)
-  return tagname
 }
 
 
@@ -159,63 +159,39 @@ def github_api_tag(args) {
   def datestring = "${dateFormat.format(date)}-04:00"
   echo "DEBUG: creating tag with date = ${datestring}"
   
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/tags"
+  def body_string = """
+{
+  "tag" = "${args.tag}",
+  "object" = "${args.sha}",
+  "message" = "${args.message}",
+  "tagger" = {
+    "name" = "${args.username}",
+    "email" = "${args.email}",
+    "date" = "${datestring}"
+  };
+  "type" = "commit"
+}
+  """
+
   def auth_token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
     auth_token = "${U}:${P}"
   }
 
-  // Note: """ multiline interpolated strings means
-  // we have to escape the powershell "$" (e.g., "\$Headers = '...'").
-  def script = """
-\$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
-\$Headers = @{ Authorization = \$basic_auth };
+  HttpResponse resp
+  try {
+    resp = this.doPostHttpRequestWithJson(auth_token, body_string, uri);
+  }
+  catch (err) {
+    error "Failed to create tag ('${args.commit_message}'): ${err}"
+  }
 
-\$params = @{
-  "tag" = "${args.tag}";
-  "object" = "${args.sha}";
-  "message" = "${args.message}";
-  "tagger" = @{
-    "name" = "${args.username}";
-    "email" = "${args.email}";
-    "date" = "${datestring}";
-  };
-  "type" = "commit";
-}
+  echo "Got code: ${resp.statusCode}"
+  echo "Got body: ${resp.body}"
+  echo "Completed tag creation of ${args.tag}"
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-\$response = Invoke-WebRequest `
-  -Headers \$Headers `
-  -Uri https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/tags `
-  -Method POST `
-  -Body (\$params | ConvertTo-Json) `
-  -ContentType "application/json"
-
-write-output \$response
-\$status_code = \$response | Select-Object -ExpandProperty StatusCode
-
-\$tagsha = \$response | Select-Object -ExpandProperty sha
-
-write-output "FINAL_StatusCode: \${status_code}"
-
-if (\$status_code -eq '201') {
-  write-output "Tag ${args.tag} created, has sha \${tagsha}"
-
-} else {
-  write-output "Tag ${args.tag} NOT CREATED"
-}
-
-"""
-
-  def result = powershell(returnStdout: true, script: script).trim()
-  echo result
-  def status_code = result.
-    split("\n").
-    findAll { it =~ /FINAL_StatusCode/ }.
-    collect { it.replace('FINAL_StatusCode: ', '') }[0]
-
-  echo "\n\nCompleted tag creation of ${args.tag}, status code = ${status_code}"
-
-  if (status_code != '200' && status_code != '201') {
+  if (resp.statusCode != 201) {
     echo "Tag NOT CREATED, exiting."
     return
   }
@@ -223,9 +199,6 @@ if (\$status_code -eq '201') {
   echo "TODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO add the refs tags thing"
 }
 
-
-
-/////////////////////////////////////////////////
 
 
 // Merge the sha into the base branch.
