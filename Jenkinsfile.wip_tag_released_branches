@@ -306,9 +306,9 @@ def get_untagged_release_branches(args) {
 	  it
 	}
 
-      // debug_dump_list("Tags", tag_list)
-      // debug_dump_list("Tag shas", tag_shas)
-      debug_dump_list("Branches", branch_list)
+      debug_dump_list("Tags matching ${tag_regex}", tag_list)
+      debug_dump_list("Tag shas", tag_shas)
+      debug_dump_list("Branches matching ${branch_regex}", branch_list)
       debug_dump_list("Untagged branches", untagged_branches)
 
       return untagged_branches
