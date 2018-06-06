@@ -19,21 +19,25 @@ node('sensei_build') {
 
     def testing_release = [
       sites: ['http://localhost:1337/'],
+      code_github_org: 'jeff-zohrab',
+      code_repo_name: 'klick-genome-CI-stub'
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
       add_tag: "TESTINGTAG"
     ]
+    // TODO: have this return a struct, with branches and errors member
+    // so can report a slack warning if there are errors.
     finalize_branches += branches_to_finalize(testing_release)
     
     def genome_release = [
       sites: ['https://genome.klick.com/'],
+      github_org: 'KlickInc',
+      repo_name: 'klick-genome'
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
       add_tag: "NEWTAGHERE"
     ]
-    // TODO: have this return a struct, with branches and errors member
-    // so can report a slack warning if there are errors.
-    finalize_branches += branches_to_finalize(genome_release)
+    // finalize_branches += branches_to_finalize(genome_release)
 
     // TODO: Sensei launches
 
@@ -79,7 +83,7 @@ node('sensei_build') {
 // Get branches needing tags and merge
 def branches_to_finalize(args) {
 
-    def untagged = get_untagged_release_branches(args.branch_pattern, args.tag_pattern)
+    def untagged = get_untagged_release_branches(args)
     if (untagged.size() == 0) {
       echo "No untagged branches, exiting."
       return
@@ -159,12 +163,12 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
 }
 
 
-def get_untagged_release_branches(branch_pattern, tag_pattern) {
+def get_untagged_release_branches(args) {
     withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
-      def repo_url = "https://${U}:${P}@github.com/${CODE_GITHUB_ORG}/${CODE_REPO_NAME}"
-      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', /refs\/tags\/${tag_pattern}/)
+      def repo_url = "https://${U}:${P}@github.com/${args.code_github_org}/${args.code_repo_name}"
+      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', /refs\/tags\/${args.tag_pattern}/)
       def tag_shas = tag_list.collect { it.sha }
-      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', /refs\/heads\/${branch_pattern}/)
+      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', /refs\/heads\/${args.branch_pattern}/)
       def untagged_branches = branch_list.findAll { !(tag_shas.contains(it.sha)) }
 
       // debug_dump_list("Tags", tag_list)
