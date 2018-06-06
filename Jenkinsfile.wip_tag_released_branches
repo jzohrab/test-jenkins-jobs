@@ -251,6 +251,10 @@ def github_api_merge(args) {
   HttpResponse resp = this.doPostHttpRequestWithJson(auth_token, body_string, "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges");
 
   echo "RESPONSE = ${resp}"
+    String body;    
+    String message;    
+    Integer statusCode;    
+    boolean failure = false;    
 
 ////  def remote = new HTTPBuilder("https://api.github.com")
 ////  remote.request(POST) { req ->
@@ -461,8 +465,8 @@ HttpResponse doGetHttpRequest(String requestUrl){
         error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
     }    
 
-    println("Request (GET):\n  URL: $requestUrl");    
-    println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    System.out.println("Request (GET):\n  URL: $requestUrl");    
+    System.out.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -516,8 +520,8 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
         error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");    
     }    
 
-    println("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
-    println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    System.out.println("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
+    System.out.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -533,12 +537,12 @@ class HttpResponse {
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
 
-        println("DEBUG StatusCode = $statusCode");
+        System.out.println("DEBUG StatusCode = $statusCode");
         if( statusCode == 200 || statusCode == 201 || statusCode == 204 ){
-            println("DEBUG getting content");
+            System.out.println("DEBUG getting content");
             this.body = connection.content.text;//this would fail the pipeline if there was a 400    
         }else{
-            println("DEBUG setting failure, getting error stream");
+            System.out.println("DEBUG setting failure, getting error stream");
             this.failure = true;    
             this.body = connection.getErrorStream().text;    
         }    
