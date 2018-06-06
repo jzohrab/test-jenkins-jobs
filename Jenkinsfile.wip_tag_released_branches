@@ -137,7 +137,7 @@ write-output \$Headers;
     "commit_message" = "merging tag";
   } | ConvertTo-Json
 
-Invoke-WebRequest -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
+Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
 """
   } // end with
   def tmp = powershell(returnStdout: true, script: myscript).trim()
