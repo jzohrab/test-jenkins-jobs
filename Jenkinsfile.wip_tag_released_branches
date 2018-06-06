@@ -1,6 +1,8 @@
 // Curl site
 
 import java.text.SimpleDateFormat
+import groovy.json.JsonSlurper
+
 
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
@@ -128,8 +130,8 @@ def finalize_release(args) {
   
 }
 
-// TODO move to the top
-import groovy.json.JsonSlurper
+
+
 
 
 // Create the new tag via the API.
@@ -307,6 +309,7 @@ def get_untagged_release_branches(args) {
 
       def branch_regex = /refs\/heads\/${args.branch_pattern}/
       def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_regex)
+      def tagged_branches = branch_list.findAll { (tag_shas.contains(it.sha)) }
       def untagged_branches = branch_list.
         findAll { !(tag_shas.contains(it.sha)) }.
 	collect {
@@ -315,10 +318,11 @@ def get_untagged_release_branches(args) {
 	  it
 	}
 
-      debug_dump_list("Tags matching ${tag_regex}", tag_list)
-      debug_dump_list("Tag shas", tag_shas)
-      debug_dump_list("Branches matching ${branch_regex}", branch_list)
-      debug_dump_list("Untagged branches", untagged_branches)
+      // debug_dump_list("Tags matching ${tag_regex}", tag_list)
+      // debug_dump_list("Tag shas", tag_shas)
+      debug_dump_list("All branches matching ${branch_regex}", branch_list)
+      debug_dump_list("Branches matching ${branch_regex}, already tagged with ${tag_regex}", tagged_branches)
+      debug_dump_list(Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
 
       return untagged_branches
     }
