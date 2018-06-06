@@ -15,14 +15,24 @@ node('sensei_build') {
 
   try {
 
-    finalize_branches = []
+    def finalize_branches = []
+
+    def testing_release = [
+      sites: ['http://localhost:1337/'],
+      branch_pattern: "release-\\d+",
+      tag_pattern: "genome_\\d+",
+      add_tag: "TESTINGTAG"
+    ]
+    finalize_branches += branches_to_finalize(testing_release)
     
-    genome_release = [
+    def genome_release = [
       sites: ['https://genome.klick.com/'],
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
       add_tag: "NEWTAGHERE"
     ]
+    // TODO: have this return a struct, with branches and errors member
+    // so can report a slack warning if there are errors.
     finalize_branches += branches_to_finalize(genome_release)
 
     // TODO: Sensei launches
@@ -129,6 +139,7 @@ def get_deployed_sha_from_manifest(check_URL) {
   catch (err) {
     result.error = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
   }
+  
   return result
 }
 
