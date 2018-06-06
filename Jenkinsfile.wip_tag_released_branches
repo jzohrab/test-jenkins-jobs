@@ -162,15 +162,15 @@ def github_api_tag(args) {
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/tags"
   def body_string = """
 {
-  "tag" = "${args.tag}",
-  "object" = "${args.sha}",
-  "message" = "${args.message}",
-  "tagger" = {
-    "name" = "${args.username}",
-    "email" = "${args.email}",
-    "date" = "${datestring}"
+  "tag": "${args.tag}",
+  "object": "${args.sha}",
+  "message": "${args.message}",
+  "tagger": {
+    "name": "${args.username}",
+    "email": "${args.email}",
+    "date": "${datestring}"
   },
-  "type" = "commit"
+  "type": "commit"
 }
   """
 
@@ -184,7 +184,7 @@ def github_api_tag(args) {
     resp = this.doPostHttpRequestWithJson(auth_token, body_string, uri);
   }
   catch (err) {
-    error "Failed to create tag ('${args.commit_message}'): ${err}"
+    error "Failed to create tag ('${args.tag}'): ${err}"
   }
 
   echo "Got code: ${resp.statusCode}"
