@@ -86,7 +86,8 @@ def send_finalized_success_slack(b) {
 merged into `master` and `develop`, and deleted.
 """
 
-  def s = [ subject: "Finalize ${branch}", body: message, channel: SLACK_CHANNEL ]
+  def msg = [ subject: "Finalize ${branch}", body: message, channel: SLACK_CHANNEL ]
+  def senseislack = new org.klick.SenseiSlack()
   senseislack.post_success(msg)
 }
 
@@ -94,7 +95,8 @@ merged into `master` and `develop`, and deleted.
 def send_finalized_failure_slack(b, err) {
   def branch = b.object.replace('refs/heads/', '')
   def message = "Error: ${err}"
-  def s = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
+  def msg = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
+  def senseislack = new org.klick.SenseiSlack()
   senseislack.post_failure(msg)
 }
 
@@ -145,7 +147,7 @@ def finalize_release(args) {
     def merge_args = [
       sha: args.sha,
       base_branch: b,
-      commit_message: "Merging ${args.add_tag} into ${b}",
+      commit_message: "Merge ${args.add_tag} into ${b}",
       code_repo_name: args.code_repo_name,
       code_github_org: args.code_github_org,
       creds_id: 'github-ci'
