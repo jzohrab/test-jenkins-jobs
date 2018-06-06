@@ -153,9 +153,10 @@ def finalize_release(args) {
 //   (the GitHub docs aren't v. good for this, use the above)
 def github_api_tag(args) {
 
-  def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ")
+  def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
   def date = new Date()
-  def datestring = dateFormat.format(date)
+  // Hardcoding 4-hour offset, couldn't get that simply in Groovy and not worth spending time on.
+  def datestring = "${dateFormat.format(date)}-04:00"
   echo "DEBUG: creating tag with date = ${datestring}"
   
   def auth_token = "user:github_token"
