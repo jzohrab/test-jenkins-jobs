@@ -141,7 +141,10 @@ Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -Co
 """
   } // end with
   def tmp = powershell(returnStdout: true, script: myscript).trim()
+  echo '---------------------------------'
+  echo 'after posting'
   echo tmp
+  echo '---------------------------------'
 }
 
 
