@@ -449,6 +449,10 @@ def get_untagged_release_branches(args) {
 /////////////////////////////
 // trying https://stackoverflow.com/questions/34682099/how-to-call-rest-from-jenkins-workflow/34875259
 
+CONFIG = new HashMap() 
+CONFIG.putAll(getBinding().getVariables()) 
+OUT = CONFIG['out'] 
+
 HttpResponse doGetHttpRequest(String requestUrl){    
     URL url = new URL(requestUrl);    
     HttpURLConnection connection = url.openConnection();    
@@ -465,8 +469,8 @@ HttpResponse doGetHttpRequest(String requestUrl){
         error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
     }    
 
-    System.out.println("Request (GET):\n  URL: $requestUrl");    
-    System.out.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    OUT.println("Request (GET):\n  URL: $requestUrl");    
+    OUT.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -520,8 +524,8 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
         error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");    
     }    
 
-    System.out.println("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
-    System.out.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    OUT.println("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
+    OUT.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -537,12 +541,12 @@ class HttpResponse {
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
 
-        System.out.println("DEBUG StatusCode = $statusCode");
+        OUT.println("DEBUG StatusCode = $statusCode");
         if( statusCode == 200 || statusCode == 201 || statusCode == 204 ){
-            System.out.println("DEBUG getting content");
+            OUT.println("DEBUG getting content");
             this.body = connection.content.text;//this would fail the pipeline if there was a 400    
         }else{
-            System.out.println("DEBUG setting failure, getting error stream");
+            OUT.println("DEBUG setting failure, getting error stream");
             this.failure = true;    
             this.body = connection.getErrorStream().text;    
         }    
