@@ -207,7 +207,7 @@ def github_api_tag(args) {
   body_string = """
 {
   "ref": "refs/tags/${args.tag}",
-  "sha": "${newtagresult.sha}",
+  "sha": "${newtagresult.sha}"
 }
   """
 
