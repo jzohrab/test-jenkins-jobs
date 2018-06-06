@@ -51,7 +51,7 @@ node('sensei_build') {
           finalize_release(b)
           send_finalized_success_slack(b)
         }
-        catch(err)
+        catch(err) {
           send_finalized_failure_slack(b, err)
         }
       }
