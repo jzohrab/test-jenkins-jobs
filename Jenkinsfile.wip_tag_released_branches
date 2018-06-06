@@ -126,7 +126,7 @@ def finalize_release(args) {
     github_api_merge(merge_args)
   }
 
-  def delete_branch = args.object.replace('refs/heads/')
+  def delete_branch = args.object.replace('refs/heads/', '')
   def delete_args = [
     branch: delete_branch,
     code_repo_name: args.code_repo_name,
