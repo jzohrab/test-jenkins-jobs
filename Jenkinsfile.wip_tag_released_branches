@@ -128,7 +128,7 @@ def finalize_release(args) {
     code_github_org: args.code_github_org,
     creds_id: 'github-ci'
   ]
-  // github_api_tag(tag_args)  // TODO - re-enable
+  github_api_tag(tag_args)
 
   for (b in ['develop', 'master']) {
     def merge_args = [
