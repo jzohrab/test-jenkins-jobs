@@ -133,8 +133,8 @@ write-output \$Base64Token;
 write-output \$Headers;
 \$params = @{
     "base" = "master";
-    "head" = "${args.add_tag}";
-    "commit_message" = "merging tag";
+    "head" = "${args.sha}";
+    "commit_message" = "Merging ${args.add_tag} into master";
   } | ConvertTo-Json
 
 Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
