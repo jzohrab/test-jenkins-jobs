@@ -493,7 +493,8 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
     HttpURLConnection connection = url.openConnection();    
 
     connection.setRequestMethod(verb);
-    basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
+    echo "Getting basic_auth value, using token ${auth_token}"
+    def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
     connection.setRequestProperty("Content-Type", "application/json");
     connection.setRequestProperty("Authorization", basic_auth);    
     connection.doOutput = true;    
