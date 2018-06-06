@@ -91,7 +91,7 @@ merged into `master` and `develop`, and deleted.
 }
 
 
-def send_finalized_failed_slack(b, err) {
+def send_finalized_failure_slack(b, err) {
   def branch = b.object.replace('refs/heads/', '')
   def message = "Error: ${err}"
   def s = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
