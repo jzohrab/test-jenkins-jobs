@@ -175,7 +175,8 @@ write-output "FINAL_StatusCode: \${status_code}"
     split("\n").
     findAll { it =~ /FINAL_StatusCode/ }.
     collect { it.replace('FINAL_StatusCode: ', '') }[0]
-  echo "Status code ${status_code}"
+
+  echo "\n\nCompleted merge of ${args.sha} into ${args.base_branch}, status code = ${status_code}"
 }
 
 
