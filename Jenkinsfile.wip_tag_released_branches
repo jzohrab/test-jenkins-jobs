@@ -130,7 +130,7 @@ def finalize_release(args) {
 
   // Note: we're using """ string for interpolation,
   // so we have to escape the powershell "$" (e.g., "\$Headers = '...'").
-  def merge_api_call = """
+  def merge_script = """
 \$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
 \$Headers = @{ Authorization = \$basic_auth };
 
@@ -154,7 +154,7 @@ write-output \$response
 write-output "FINAL_StatusCode: \${status_code}"
 """
 
-  def tmp = powershell(returnStdout: true, script: myscript).trim()
+  def tmp = powershell(returnStdout: true, script: merge_script).trim()
   echo '---------------------------------'
   echo 'after posting'
   echo tmp
