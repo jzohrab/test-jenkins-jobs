@@ -122,7 +122,7 @@ def finalize_release(args) {
       commit_message: "Merging ${args.add_tag} into ${b}",
       code_repo_name: args.code_repo_name,
       code_github_org: args.code_github_org,
-      creds_id: 'github_ci'
+      creds_id: 'github-ci'
     ]
     github_api_merge(merge_args)
   }
