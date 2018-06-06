@@ -1,14 +1,9 @@
 // Curl site
 
+import java.text.SimpleDateFormat
+
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
-
-
-CODE_GITHUB_ORG = 'KlickInc'
-CODE_REPO_NAME = 'klick-genome'
-
-CODE_GITHUB_ORG = 'jeff-zohrab'
-CODE_REPO_NAME = 'klick-genome-CI-stub'
 
 
 node('sensei_build') {
@@ -110,11 +105,31 @@ def branches_to_finalize(args) {
 }
 
 
+def make_tag_name(tag_start) {
+  def dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
+  def date = new Date()
+  def tagname = tag_start + dateFormat.format(date)
+  return tagname
+}
+
+
 // Finalize the release:
 // * tag any untagged release branch that has been deployed
 // * merge into develop and push
 // * merge into master and push
 def finalize_release(args) {
+  def tag_args = [
+    tag: args.add_tag,
+    sha: args.sha,
+    message: "Deployed",
+    username: 'sensei-jenkins',
+    email: 'sensei-jenkins@ci.senseilabs.com',
+    code_repo_name: args.code_repo_name,
+    code_github_org: args.code_github_org,
+    creds_id: 'github-ci'
+  ]
+  github_api_tag(tag_args)
+
   for (b in ['develop', 'master']) {
     def merge_args = [
       sha: args.sha,
@@ -126,6 +141,8 @@ def finalize_release(args) {
     ]
     github_api_merge(merge_args)
   }
+
+  
 }
 
 
@@ -136,23 +153,57 @@ def finalize_release(args) {
 //   (the GitHub docs aren't v. good for this, use the above)
 def github_api_tag(args) {
 
-  def datestring = "2012-06-17T14:53:35-07:00"  // TODO
+  def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ")
+  def date = new Date()
+  def datestring = dateFormat.format(date)
+  echo "DEBUG: creating tag with date = ${datestring}"
   
-  def tag_object_request = """
-{
-  "tag": "${args.tag}",
-  "object": "${args.sha}",
-  "message": "${args.message}",
-  "tagger": {
-    "name": "${args.username}",
-    "email": "${args.email}",
-    "date": "${datestring}"
-  },
-  "type": "commit"
-}"""
+  def auth_token = "user:github_token"
+  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
+    auth_token = "${U}:${P}"
+  }
 
-// ... etc.
+  // Note: """ multiline interpolated strings means
+  // we have to escape the powershell "$" (e.g., "\$Headers = '...'").
+  def script = """
+\$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
+\$Headers = @{ Authorization = \$basic_auth };
 
+\$params = @{
+  "tag": "${args.tag}";
+  "object": "${args.sha}";
+  "message": "${args.message}";
+  "tagger": @{
+    "name": "${args.username}";
+    "email": "${args.email}";
+    "date": "${datestring}";
+  };
+  "type": "commit";
+}
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+\$response = Invoke-WebRequest `
+  -Headers \$Headers `
+  -Uri https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/tags `
+  -Method POST `
+  -Body (\$params | ConvertTo-Json) `
+  -ContentType "application/json"
+\$status_code = \$response | Select-Object -ExpandProperty StatusCode
+
+write-output \$response
+write-output "FINAL_StatusCode: \${status_code}"
+"""
+
+  def result = powershell(returnStdout: true, script: script).trim()
+  echo result
+  def status_code = result.
+    split("\n").
+    findAll { it =~ /FINAL_StatusCode/ }.
+    collect { it.replace('FINAL_StatusCode: ', '') }[0]
+
+  echo "\n\nCompleted tag creation of ${args.add_tag}, status code = ${status_code}"
+
+  echo "TODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO add the refs tags thing"
 }
 
 
@@ -163,7 +214,6 @@ def github_api_tag(args) {
 // * https://developer.github.com/v3/repos/merging/
 // * https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
 def github_api_merge(args) {
-  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
   def auth_token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
     auth_token = "${U}:${P}"
@@ -171,7 +221,7 @@ def github_api_merge(args) {
 
   // Note: """ multiline interpolated strings means
   // we have to escape the powershell "$" (e.g., "\$Headers = '...'").
-  def merge_script = """
+  def script = """
 \$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
 \$Headers = @{ Authorization = \$basic_auth };
 
@@ -181,11 +231,10 @@ def github_api_merge(args) {
   "commit_message" = "${args.commit_message}";
 }
 
-# Use TLS 1.2 (ref https://stackoverflow.com/questions/41618766/)
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 \$response = Invoke-WebRequest `
   -Headers \$Headers `
-  -Uri ${uri} `
+  -Uri https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges `
   -Method POST `
   -Body (\$params | ConvertTo-Json) `
   -ContentType "application/json"
@@ -195,7 +244,7 @@ write-output \$response
 write-output "FINAL_StatusCode: \${status_code}"
 """
 
-  def result = powershell(returnStdout: true, script: merge_script).trim()
+  def result = powershell(returnStdout: true, script: script).trim()
   echo result
   def status_code = result.
     split("\n").
