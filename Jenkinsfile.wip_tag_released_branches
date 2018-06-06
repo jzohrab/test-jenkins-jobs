@@ -129,6 +129,32 @@ def finalize_release(args) {
 }
 
 
+// Create the new tag via the API.
+//
+// Refs:
+// * https://stackoverflow.com/questions/15672547/how-to-tag-a-commit-in-api-using-curl-command
+//   (the GitHub docs aren't v. good for this, use the above)
+def github_api_tag(args) {
+
+  def datestring = "2012-06-17T14:53:35-07:00"  // TODO
+  
+  def tag_object_request = """
+{
+  "tag": "${args.tag}",
+  "object": "${args.sha}",
+  "message": "${args.message}",
+  "tagger": {
+    "name": "${args.username}",
+    "email": "${args.email}",
+    "date": "${datestring}"
+  },
+  "type": "commit"
+}"""
+
+// ... etc.
+
+}
+
 
 // Merge the sha into the base branch.
 //
