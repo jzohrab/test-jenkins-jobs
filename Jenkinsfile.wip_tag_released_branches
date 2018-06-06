@@ -240,21 +240,23 @@ def github_api_merge(args) {
     auth_token = "${U}:${P}"
   }
 
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
   def body_string = """
   {
       "base": "${args.base_branch}",
-      "head": "${args.sha}",
+      "head": "xxx${args.sha}",
       "commit_message": "${args.commit_message}"
   }
   """
 
-  HttpResponse resp = this.doPostHttpRequestWithJson(auth_token, body_string, "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges");
+  HttpResponse resp
+  try {
+    resp = this.doPostHttpRequestWithJson(auth_token, body_string, uri);
+  }
+  catch (err) {
+    error "Failed during merge (${args.commit_message}): ${err}"
+  }
 
-  echo "RESPONSE = ${resp}"
-    String body;    
-    String message;    
-    Integer statusCode;    
-    boolean failure = false;    
 
 ////  def remote = new HTTPBuilder("https://api.github.com")
 ////  remote.request(POST) { req ->
