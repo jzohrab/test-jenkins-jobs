@@ -170,15 +170,15 @@ def github_api_tag(args) {
 \$Headers = @{ Authorization = \$basic_auth };
 
 \$params = @{
-  "tag": "${args.tag}";
-  "object": "${args.sha}";
-  "message": "${args.message}";
-  "tagger": @{
-    "name": "${args.username}";
-    "email": "${args.email}";
-    "date": "${datestring}";
+  "tag" = "${args.tag}";
+  "object" = "${args.sha}";
+  "message" = "${args.message}";
+  "tagger" = @{
+    "name" = "${args.username}";
+    "email" = "${args.email}";
+    "date" = "${datestring}";
   };
-  "type": "commit";
+  "type" = "commit";
 }
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
