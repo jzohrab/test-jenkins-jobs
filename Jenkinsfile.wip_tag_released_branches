@@ -22,8 +22,6 @@ node('sensei_build') {
       tag_pattern: "genome_\\d+",
       add_tag: make_tag_name("genome_")
     ]
-    // TODO: have this return a struct, with branches and errors member
-    // so can report a slack warning if there are errors.
     finalize_branches += branches_to_finalize(testing_release)
     
     def genome_release = [
@@ -34,7 +32,7 @@ node('sensei_build') {
       tag_pattern: "genome_\\d+",
       add_tag: make_tag_name("genome_")
     ]
-    // finalize_branches += branches_to_finalize(genome_release)
+    finalize_branches += branches_to_finalize(genome_release)
 
     // TODO: Sensei launches
 
