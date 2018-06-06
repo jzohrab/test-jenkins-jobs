@@ -26,7 +26,8 @@ node('sensei_build') {
     finalize_branches << branches_to_finalize(genome_release)
 
     // TODO: Sensei launches
-    
+
+    debug_dump_list("Finalize", finalize_branches)
     if (finalize_branches.size() == 0) {
       echo "No release branches need tagging/merging, exiting."
       return
