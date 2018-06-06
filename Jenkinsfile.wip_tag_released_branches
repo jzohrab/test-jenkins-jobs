@@ -7,6 +7,7 @@ import groovy.json.JsonSlurper
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
 
+SLACK_CHANNEL = 'jenkins-dev-tests'  // TODO change this
 
 node('sensei_build') {
 
@@ -14,49 +15,55 @@ node('sensei_build') {
 
     def finalize_branches = []
 
-    def testing_release = [
-      sites: ['http://localhost:1337/'],
-      code_github_org: 'jeff-zohrab',
-      code_repo_name: 'klick-genome-CI-stub',
-      branch_pattern: "release-\\d+",
-      tag_pattern: "genome_\\d+",
-      add_tag: make_tag_name("genome_")
-    ]
-    finalize_branches += branches_to_finalize(testing_release)
-
-    def genome_release = [
-      sites: ['https://genome.klick.com/'],
-      code_github_org: 'KlickInc',
-      code_repo_name: 'klick-genome',
-      branch_pattern: "release-\\d+",
-      tag_pattern: "genome_\\d+",
-      add_tag: make_tag_name("genome_")
-    ]
-    finalize_branches += branches_to_finalize(genome_release)
-
-    // TODO: Sensei launches
-
-    debug_dump_list("Finalize", finalize_branches)
-    if (finalize_branches.size() == 0) {
-      echo "No release branches need tagging/merging, exiting."
-      return
+    stage('Get release branches') {
+      def testing_release = [
+        sites: ['http://localhost:1337/'],
+        code_github_org: 'jeff-zohrab',
+        code_repo_name: 'klick-genome-CI-stub',
+        branch_pattern: "release-\\d+",
+        tag_pattern: "genome_\\d+",
+        add_tag: make_tag_name("genome_")
+      ]
+      finalize_branches += branches_to_finalize(testing_release)
+  
+      def genome_release = [
+        sites: ['https://genome.klick.com/'],
+        code_github_org: 'KlickInc',
+        code_repo_name: 'klick-genome',
+        branch_pattern: "release-\\d+",
+        tag_pattern: "genome_\\d+",
+        add_tag: make_tag_name("genome_")
+      ]
+      finalize_branches += branches_to_finalize(genome_release)
+  
+      // TODO: Sensei launches
     }
 
-    finalize_branches.each { b ->
-      echo "Finalizing ${b}"
-      finalize_release(b)
-    }
+    stage('Finalize branches') {
+      debug_dump_list("Finalize", finalize_branches)
+      if (finalize_branches.size() == 0) {
+        echo "No release branches need tagging/merging, exiting."
+      }
+  
+      finalize_branches.each { b ->
+        try {
+          echo "Finalizing ${b}"
+          finalize_release(b)
+          send_finalized_success_slack(b)
+        }
+        catch(err)
+          send_finalized_failure_slack(b, err)
+        }
+      }
 
-    // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
-    // senseislack.post_success(msg)
+    }
 
   }
   catch(err) {
     echo "FAILED: ${err}"
     currentBuild.result = 'FAILURE'
-
-    // def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
-    // senseislack.post_failure(msg)
+    def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: SLACK_CHANNEL ]
+    senseislack.post_failure(msg)
   }
 }
 
@@ -69,6 +76,26 @@ def make_tag_name(tag_start) {
   def date = new Date()
   def tagname = tag_start + dateFormat.format(date)
   return tagname
+}
+
+
+def send_finalized_success_slack(b) {
+  def branch = b.object.replace('refs/heads/', '')
+  def message = """
+`${branch}` (${b.code_repo_name}) tagged `${b.add_tag}`,
+merged into `master` and `develop`, and deleted.
+"""
+
+  def s = [ subject: "Finalize ${branch}", body: message, channel: SLACK_CHANNEL ]
+  senseislack.post_success(msg)
+}
+
+
+def send_finalized_failed_slack(b, err) {
+  def branch = b.object.replace('refs/heads/', '')
+  def message = "Error: ${err}"
+  def s = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
+  senseislack.post_failure(msg)
 }
 
 
@@ -257,7 +284,7 @@ def github_api_delete_branch(args) {
     auth_token = "${U}:${P}"
   }
 
-  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs/heads/${arg.branch}"
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs/heads/${args.branch}"
 
   HttpResponse resp
   try {
