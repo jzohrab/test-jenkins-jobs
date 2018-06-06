@@ -128,7 +128,7 @@ def finalize_release(args) {
     code_github_org: args.code_github_org,
     creds_id: 'github-ci'
   ]
-  github_api_tag(tag_args)
+  // github_api_tag(tag_args)  // TODO - re-enable
 
   for (b in ['develop', 'master']) {
     def merge_args = [
@@ -224,6 +224,10 @@ if (\$status_code -eq '201') {
 }
 
 
+
+/////////////////////////////////////////////////
+
+
 // Merge the sha into the base branch.
 //
 // GitHub API only allows for merging by branch or sha.
@@ -231,6 +235,89 @@ if (\$status_code -eq '201') {
 // * https://developer.github.com/v3/repos/merging/
 // * https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
 def github_api_merge(args) {
+  def auth_token = "user:github_token"
+  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
+    auth_token = "${U}:${P}"
+  }
+
+  def remote = new HTTPBuilder("https://api.github.com")
+  remote.request(POST) { req ->
+    uri.path = "/repos/${args.code_github_org}/${args.code_repo_name}/merges"
+    requestContentType = ContentType.JSON
+    body = [
+      base: args.base_branch,
+      head: args.sha,
+      commit_message: args.commit_message
+    ]
+    headers = ['Authorization': "Basic ${auth_token.bytes.encodeBase64().toString()}"]
+
+    response.success = { resp ->
+        println "Success! ${resp.status}"
+    }
+
+    response.failure = { resp ->
+        println "Request failed with status ${resp.status}"
+    }
+
+  }
+
+
+  // Note: """ multiline interpolated strings means
+  // we have to escape the powershell "$" (e.g., "\$Headers = '...'").
+  def script = """
+\$basic_auth = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${auth_token}')
+\$Headers = @{ Authorization = \$basic_auth };
+
+\$params = @{
+  "base" = "${args.base_branch}";
+  "head" = "${args.sha}";
+  "commit_message" = "${args.commit_message}";
+}
+
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+\$response = Invoke-WebRequest `
+  -Headers \$Headers `
+  -Uri https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges `
+  -Method POST `
+  -Body (\$params | ConvertTo-Json) `
+  -ContentType "application/json"
+\$status_code = \$response | Select-Object -ExpandProperty StatusCode
+
+write-output \$response
+write-output "FINAL_StatusCode: \${status_code}"
+"""
+
+  def result = powershell(returnStdout: true, script: script).trim()
+  echo result
+  def status_code = result.
+    split("\n").
+    findAll { it =~ /FINAL_StatusCode/ }.
+    collect { it.replace('FINAL_StatusCode: ', '') }[0]
+
+  echo "\n\nCompleted merge of ${args.sha} into ${args.base_branch}, status code = ${status_code}"
+}
+
+
+def debug_dump_list(title, items) {
+  def content = items.collect { "  * ${it}" }.join("\n")
+  echo """-----------------
+DEBUG: ${title} (${items.size()} items):
+${content}
+END_DEBUG: ${title}
+--------------------"""
+}
+
+
+///////////////////////////////////////////////////////////
+// POWERSHELL
+
+// Merge the sha into the base branch.
+//
+// GitHub API only allows for merging by branch or sha.
+// Refs:
+// * https://developer.github.com/v3/repos/merging/
+// * https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
+def POWERSHELL___github_api_merge(args) {
   def auth_token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
     auth_token = "${U}:${P}"
@@ -281,6 +368,7 @@ END_DEBUG: ${title}
 --------------------"""
 }
 
+//// END POWERSHELL
 
 
 // Get the sha from the deployed manifest.
