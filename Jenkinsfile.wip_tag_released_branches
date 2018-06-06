@@ -190,9 +190,18 @@ def github_api_tag(args) {
   -Body (\$params | ConvertTo-Json) `
   -ContentType "application/json"
 \$status_code = \$response | Select-Object -ExpandProperty StatusCode
+\$tagsha = \$response | Select-Object -ExpandProperty sha
 
 write-output \$response
 write-output "FINAL_StatusCode: \${status_code}"
+
+if (\$status_code -eq '201') {
+  write-output "Tag ${args.tag} created, has sha \${tagsha}"
+
+} else {
+  write-output "Tag ${args.tag} NOT CREATED"
+}
+
 """
 
   def result = powershell(returnStdout: true, script: script).trim()
@@ -202,8 +211,13 @@ write-output "FINAL_StatusCode: \${status_code}"
     findAll { it =~ /FINAL_StatusCode/ }.
     collect { it.replace('FINAL_StatusCode: ', '') }[0]
 
-  echo "\n\nCompleted tag creation of ${args.add_tag}, status code = ${status_code}"
+  echo "\n\nCompleted tag creation of ${args.tag}, status code = ${status_code}"
 
+  if (status_code != '200' && status_code != '201') {
+    echo "Tag NOT CREATED, exiting."
+    return
+  }
+  
   echo "TODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO add the refs tags thing"
 }
 
