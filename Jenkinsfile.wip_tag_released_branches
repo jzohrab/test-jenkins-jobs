@@ -249,7 +249,7 @@ def github_api_merge(args) {
 // Delete branch.
 //
 // Ref https://developer.github.com/v3/git/refs/#delete-a-reference
-def github_api_delete(args) {
+def github_api_delete_branch(args) {
   echo "DELETING: ${args}"
 
   def auth_token = "user:github_token"
