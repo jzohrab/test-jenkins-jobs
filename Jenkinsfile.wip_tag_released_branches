@@ -322,7 +322,7 @@ def get_untagged_release_branches(args) {
       // debug_dump_list("Tag shas", tag_shas)
       debug_dump_list("All branches matching ${branch_regex}", branch_list)
       debug_dump_list("Branches matching ${branch_regex}, already tagged with ${tag_regex}", tagged_branches)
-      debug_dump_list(Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
+      debug_dump_list("Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
 
       return untagged_branches
     }
