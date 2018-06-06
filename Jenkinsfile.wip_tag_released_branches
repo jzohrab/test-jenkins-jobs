@@ -449,10 +449,6 @@ def get_untagged_release_branches(args) {
 /////////////////////////////
 // trying https://stackoverflow.com/questions/34682099/how-to-call-rest-from-jenkins-workflow/34875259
 
-CONFIG = new HashMap() 
-CONFIG.putAll(getBinding().getVariables()) 
-OUT = CONFIG['out'] 
-
 HttpResponse doGetHttpRequest(String requestUrl){    
     URL url = new URL(requestUrl);    
     HttpURLConnection connection = url.openConnection();    
@@ -463,7 +459,7 @@ HttpResponse doGetHttpRequest(String requestUrl){
     connection.connect();    
 
     //parse the response    
-    HttpResponse resp = new HttpResponse(connection);    
+    HttpResponse resp = new HttpResponse(connection);
 
     if(resp.isFailure()){    
         error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
@@ -537,7 +533,14 @@ class HttpResponse {
     Integer statusCode;    
     boolean failure = false;    
 
-    public HttpResponse(HttpURLConnection connection){    
+    public HttpResponse(HttpURLConnection connection){
+
+// Ref http://jenkins-ci.361315.n4.nabble.com/println-to-script-console-td3901236.html
+CONFIG = new HashMap() 
+CONFIG.putAll(getBinding().getVariables()) 
+OUT = CONFIG['out'] 
+
+
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
 
