@@ -100,6 +100,7 @@ def branches_to_finalize(args) {
 // * tag any untagged release branch that has been deployed
 // * merge into develop and push
 // * merge into master and push
+// * delete the unneeded branch
 def finalize_release(args) {
   def tag_args = [
     tag: args.add_tag,
@@ -125,6 +126,14 @@ def finalize_release(args) {
     github_api_merge(merge_args)
   }
 
+  def delete_args = [
+    branch: args.branch,
+    sha: args.sha,
+    code_repo_name: args.code_repo_name,
+    code_github_org: args.code_github_org,
+    creds_id: 'github-ci'
+  ]
+  github_api_delete_branch(delete_args)
   
 }
 
@@ -209,9 +218,7 @@ def github_api_tag(args) {
 // Merge the sha into the base branch.
 //
 // GitHub API only allows for merging by branch or sha.
-// Refs:
-// * https://developer.github.com/v3/repos/merging/
-// * https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
+// Ref https://developer.github.com/v3/repos/merging/
 def github_api_merge(args) {
   def auth_token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
@@ -235,17 +242,42 @@ def github_api_merge(args) {
     error "Failed during merge ('${args.commit_message}'): ${err}"
   }
 
-  echo "Completed merge of ${args.sha} into ${args.base_branch}"
+  echo "Merged ${args.sha} into ${args.base_branch}"
+}
+
+
+// Delete branch.
+//
+// Ref https://developer.github.com/v3/git/refs/#delete-a-reference
+def github_api_delete(args) {
+  echo "DELETING: ${args}"
+
+  def auth_token = "user:github_token"
+  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
+    auth_token = "${U}:${P}"
+  }
+
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs/heads/${arg.branch}"
+
+  HttpResponse resp
+  try {
+    resp = this.doDeleteHttpRequest(auth_token, uri);
+  }
+  catch (err) {
+    error "Failed during delete of ${args.branch}: ${err}"
+  }
+
+  echo "Deleted ${args.branch}"
 }
 
 
 
 def debug_dump_list(title, items) {
   def content = items.collect { "  * ${it}" }.join("\n")
+  if (content == null) { content = "  (no items)" }
   echo """-----------------
 DEBUG: ${title} (${items.size()} items):
 ${content}
-END_DEBUG: ${title}
 --------------------"""
 }
 
@@ -352,6 +384,30 @@ HttpResponse doGetHttpRequest(String requestUrl){
 
     return resp;    
 }  
+
+
+HttpResponse doDeleteHttpRequest(String auth_token, String requestUrl){    
+    URL url = new URL(requestUrl);    
+    HttpURLConnection connection = url.openConnection();    
+
+    def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
+    connection.setRequestProperty("Authorization", basic_auth);    
+    connection.setRequestMethod("DELETE");
+
+    connection.connect();    
+
+    HttpResponse resp = new HttpResponse(connection);
+
+    if(resp.isFailure()){    
+        error("\nDELETE from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    }    
+
+    echo("Request (DELETE):\n  URL: $requestUrl");    
+    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+
+    return resp;    
+}  
+
 
 /**    
  * Posts the json content to the given url, ensures a 2xx status on the response.    
