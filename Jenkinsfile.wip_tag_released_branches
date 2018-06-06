@@ -465,8 +465,8 @@ HttpResponse doGetHttpRequest(String requestUrl){
         error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
     }    
 
-    OUT.println("Request (GET):\n  URL: $requestUrl");    
-    OUT.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    echo("Request (GET):\n  URL: $requestUrl");    
+    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -520,8 +520,8 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
         error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");    
     }    
 
-    OUT.println("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
-    OUT.println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    echo("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
+    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -536,10 +536,9 @@ class HttpResponse {
     public HttpResponse(HttpURLConnection connection){
 
 // Ref http://jenkins-ci.361315.n4.nabble.com/println-to-script-console-td3901236.html
-CONFIG = new HashMap() 
+def CONFIG = new HashMap() 
 CONFIG.putAll(getBinding().getVariables()) 
-OUT = CONFIG['out'] 
-
+def OUT = CONFIG['out'] 
 
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
