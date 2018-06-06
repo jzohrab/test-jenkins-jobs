@@ -23,7 +23,7 @@ node('sensei_build') {
       add_tag: make_tag_name("genome_")
     ]
     finalize_branches += branches_to_finalize(testing_release)
-    
+
     def genome_release = [
       sites: ['https://genome.klick.com/'],
       code_github_org: 'KlickInc',
@@ -54,7 +54,7 @@ node('sensei_build') {
   catch(err) {
     echo "FAILED: ${err}"
     currentBuild.result = 'FAILURE'
-    
+
     // def msg = [ subject: 'failed', body: "ERROR: ${err}", channel: 'jenkins-dev-tests' ]
     // senseislack.post_failure(msg)
   }
@@ -126,15 +126,15 @@ def finalize_release(args) {
     github_api_merge(merge_args)
   }
 
+  def delete_branch = args.object.replace('refs/heads/')
   def delete_args = [
-    branch: args.branch,
-    sha: args.sha,
+    branch: delete_branch,
     code_repo_name: args.code_repo_name,
     code_github_org: args.code_github_org,
     creds_id: 'github-ci'
   ]
   github_api_delete_branch(delete_args)
-  
+
 }
 
 
@@ -153,7 +153,7 @@ def github_api_tag(args) {
   // Hardcoding 4-hour offset, couldn't get that simply in Groovy and not worth spending time on.
   def datestring = "${dateFormat.format(date)}-04:00"
   echo "DEBUG: creating tag with date = ${datestring}"
-  
+
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/tags"
   def body_string = """
 {
@@ -285,7 +285,7 @@ ${content}
 // Get the sha from the deployed manifest.
 def get_deployed_sha_from_manifest(check_URL) {
   def result = [ sha: null, error: null ]
-  
+
   manifest_url = "${check_URL}/manifest.json"
   try {
     // See https://stackoverflow.com/questions/1408042/output-data-with-no-column-headings-using-powershel
@@ -301,7 +301,7 @@ def get_deployed_sha_from_manifest(check_URL) {
   catch (err) {
     result.error = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
   }
-  
+
   return result
 }
 
@@ -325,7 +325,7 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
   if (object_type == '--tags') {
     data = data.findAll { it =~ /\^\{\}$/ }
   }
-  
+
   return data.collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
 }
 
@@ -357,131 +357,131 @@ def get_untagged_release_branches(args) {
       return untagged_branches
     }
 }
-    
+
 
 
 /////////////////////////////
 // trying https://stackoverflow.com/questions/34682099/how-to-call-rest-from-jenkins-workflow/34875259
 
-HttpResponse doGetHttpRequest(String requestUrl){    
-    URL url = new URL(requestUrl);    
-    HttpURLConnection connection = url.openConnection();    
+HttpResponse doGetHttpRequest(String requestUrl){
+    URL url = new URL(requestUrl);
+    HttpURLConnection connection = url.openConnection();
 
-    connection.setRequestMethod("GET");    
+    connection.setRequestMethod("GET");
 
-    //get the request    
-    connection.connect();    
+    //get the request
+    connection.connect();
 
-    //parse the response    
+    //parse the response
     HttpResponse resp = new HttpResponse(connection);
 
-    if(resp.isFailure()){    
-        error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
-    }    
+    if(resp.isFailure()){
+        error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+    }
 
-    echo("Request (GET):\n  URL: $requestUrl");    
-    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    echo("Request (GET):\n  URL: $requestUrl");
+    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
 
-    return resp;    
-}  
-
-
-HttpResponse doDeleteHttpRequest(String auth_token, String requestUrl){    
-    URL url = new URL(requestUrl);    
-    HttpURLConnection connection = url.openConnection();    
-
-    def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
-    connection.setRequestProperty("Authorization", basic_auth);    
-    connection.setRequestMethod("DELETE");
-
-    connection.connect();    
-
-    HttpResponse resp = new HttpResponse(connection);
-
-    if(resp.isFailure()){    
-        error("\nDELETE from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
-    }    
-
-    echo("Request (DELETE):\n  URL: $requestUrl");    
-    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
-
-    return resp;    
-}  
-
-
-/**    
- * Posts the json content to the given url, ensures a 2xx status on the response.    
- * If a negative status is returned, an error will be raised and the pipeline will fail.    
- */    
-HttpResponse doPostHttpRequestWithJson(String auth_token, String json, String requestUrl){    
-    return doHttpRequestWithJson(auth_token, json, requestUrl, "POST");    
-}    
-
-/**    
- * Posts the json content to the given url, ensures a 2xx status on the response.
- * If a negative status is returned, an error will be raised and the pipeline will fail.    
- */    
-HttpResponse doPutHttpRequestWithJson(String json, String requestUrl){    
-    return doHttpRequestWithJson(json, requestUrl, "PUT");    
+    return resp;
 }
 
-/**    
+
+HttpResponse doDeleteHttpRequest(String auth_token, String requestUrl){
+    URL url = new URL(requestUrl);
+    HttpURLConnection connection = url.openConnection();
+
+    def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
+    connection.setRequestProperty("Authorization", basic_auth);
+    connection.setRequestMethod("DELETE");
+
+    connection.connect();
+
+    HttpResponse resp = new HttpResponse(connection);
+
+    if(resp.isFailure()){
+        error("\nDELETE from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+    }
+
+    echo("Request (DELETE):\n  URL: $requestUrl");
+    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+
+    return resp;
+}
+
+
+/**
+ * Posts the json content to the given url, ensures a 2xx status on the response.
+ * If a negative status is returned, an error will be raised and the pipeline will fail.
+ */
+HttpResponse doPostHttpRequestWithJson(String auth_token, String json, String requestUrl){
+    return doHttpRequestWithJson(auth_token, json, requestUrl, "POST");
+}
+
+/**
+ * Posts the json content to the given url, ensures a 2xx status on the response.
+ * If a negative status is returned, an error will be raised and the pipeline will fail.
+ */
+HttpResponse doPutHttpRequestWithJson(String json, String requestUrl){
+    return doHttpRequestWithJson(json, requestUrl, "PUT");
+}
+
+/**
  * Post/Put the json content to the given url, ensures a 2xx status on the response.
- * If a negative status is returned, an error will be raised and the pipeline will fail.    
- * verb - PUT or POST    
- */    
-HttpResponse doHttpRequestWithJson(String auth_token, String json, String requestUrl, String verb){    
-    URL url = new URL(requestUrl);    
-    HttpURLConnection connection = url.openConnection();    
+ * If a negative status is returned, an error will be raised and the pipeline will fail.
+ * verb - PUT or POST
+ */
+HttpResponse doHttpRequestWithJson(String auth_token, String json, String requestUrl, String verb){
+    URL url = new URL(requestUrl);
+    HttpURLConnection connection = url.openConnection();
 
     connection.setRequestMethod(verb);
     def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
     connection.setRequestProperty("Content-Type", "application/json");
-    connection.setRequestProperty("Authorization", basic_auth);    
-    connection.doOutput = true;    
+    connection.setRequestProperty("Authorization", basic_auth);
+    connection.doOutput = true;
 
-    //write the payload to the body of the request    
-    def writer = new OutputStreamWriter(connection.outputStream);    
-    writer.write(json);    
-    writer.flush();    
-    writer.close();    
+    //write the payload to the body of the request
+    def writer = new OutputStreamWriter(connection.outputStream);
+    writer.write(json);
+    writer.flush();
+    writer.close();
 
-    //post the request    
-    connection.connect();    
+    //post the request
+    connection.connect();
 
-    //parse the response    
-    HttpResponse resp = new HttpResponse(connection);    
+    //parse the response
+    HttpResponse resp = new HttpResponse(connection);
 
     connection = null;
 
-    if(resp.isFailure()) {    
-        error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");    
-    }    
+    if(resp.isFailure()) {
+        error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");
+    }
 
-    echo("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
-    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    echo("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");
+    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
 
-    return resp;    
-}  
+    return resp;
+}
 
-class HttpResponse {    
+class HttpResponse {
 
-    String body;    
-    String message;    
-    Integer statusCode;    
-    boolean failure = false;    
+    String body;
+    String message;
+    Integer statusCode;
+    boolean failure = false;
 
     public HttpResponse(HttpURLConnection connection){
 
-        this.statusCode = connection.responseCode;    
-        this.message = connection.responseMessage;    
+        this.statusCode = connection.responseCode;
+        this.message = connection.responseMessage;
 
         if ( statusCode >= 200 && statusCode < 300 ) {
-            //this would fail the pipeline if there was a 400    
+            //this would fail the pipeline if there was a 400
             this.body = connection.content.text;
         } else {
             this.failure = true;
             this.body = connection.getErrorStream().text;
-        }    
-    }       
+        }
+    }
 }
