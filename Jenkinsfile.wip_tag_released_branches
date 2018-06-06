@@ -20,7 +20,7 @@ node('sensei_build') {
     def testing_release = [
       sites: ['http://localhost:1337/'],
       code_github_org: 'jeff-zohrab',
-      code_repo_name: 'klick-genome-CI-stub'
+      code_repo_name: 'klick-genome-CI-stub',
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
       add_tag: "TESTINGTAG"
@@ -32,7 +32,7 @@ node('sensei_build') {
     def genome_release = [
       sites: ['https://genome.klick.com/'],
       github_org: 'KlickInc',
-      repo_name: 'klick-genome'
+      repo_name: 'klick-genome',
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
       add_tag: "NEWTAGHERE"
