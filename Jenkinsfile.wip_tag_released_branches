@@ -122,6 +122,10 @@ def finalize_release(args) {
   def myscript = ""
   withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
     myscript = """
+# Ref: https://stackoverflow.com/questions/41618766/
+#   powershell-invoke-webrequest-fails-with-ssl-tls-secure-channe
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 \$Base64Token = [System.Convert]::ToBase64String([char[]]'${U}:${P}');
 \$Headers = @{ Authorization = 'Basic {0}' -f \$Base64Token };
 \$params = @{
