@@ -145,6 +145,9 @@ def finalize_release(args) {
   
 }
 
+// TODO move to the top
+import groovy.json.JsonSlurper
+
 
 // Create the new tag via the API.
 //
@@ -195,8 +198,27 @@ def github_api_tag(args) {
     echo "Tag NOT CREATED, exiting."
     return
   }
-  
-  echo "TODO OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO add the refs tags thing"
+
+  def slurper = new groovy.json.JsonSlurper()
+  def newtagresult = slurper.parseText(resp.body)
+  echo "Got sha of the new tag = ${newtagresult.sha}"
+
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs"
+  def body_string = """
+{
+  "ref": "refs/tags/${args.tag}",
+  "sha": "${newtagresult.sha}",
+}
+  """
+
+  resp = null
+  try {
+    resp = this.doPostHttpRequestWithJson(auth_token, body_string, uri);
+  }
+  catch (err) {
+    error "Failed to create ref for tag '${args.tag}': ${err}"
+  }
+
 }
 
 
