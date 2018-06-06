@@ -150,6 +150,8 @@ def finalize_release(args) {
 
 \$json = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json" | ConvertFrom-Json
 
+write-output \$json
+
 write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
 """
 
