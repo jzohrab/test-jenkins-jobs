@@ -189,10 +189,12 @@ def github_api_tag(args) {
   -Method POST `
   -Body (\$params | ConvertTo-Json) `
   -ContentType "application/json"
-\$status_code = \$response | Select-Object -ExpandProperty StatusCode
-\$tagsha = \$response | Select-Object -ExpandProperty sha
 
 write-output \$response
+\$status_code = \$response | Select-Object -ExpandProperty StatusCode
+
+\$tagsha = \$response | Select-Object -ExpandProperty sha
+
 write-output "FINAL_StatusCode: \${status_code}"
 
 if (\$status_code -eq '201') {
