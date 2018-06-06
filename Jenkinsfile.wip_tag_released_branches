@@ -78,7 +78,7 @@ def branches_to_finalize(args) {
     def untagged = get_untagged_release_branches(args)
     if (untagged.size() == 0) {
       echo "No untagged branches, exiting."
-      return
+      return []
     }
 
     def deployed = args.sites.collect { url ->
