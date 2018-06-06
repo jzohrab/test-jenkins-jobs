@@ -150,7 +150,7 @@ def finalize_release(args) {
 
 \$response = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
 
-write-output \$response
+write-output \$response | Select-Object -ExpandProperty StatusCode
 
 # write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
 """
