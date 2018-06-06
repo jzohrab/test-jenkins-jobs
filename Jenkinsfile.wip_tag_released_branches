@@ -150,7 +150,8 @@ def finalize_release(args) {
 
 \$response = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
 
-write-output \$response | Select-Object -ExpandProperty StatusCode
+write-output \$response
+write-output "FINAL_StatusCode: \${ \$response | Select-Object -ExpandProperty StatusCode }"
 
 # write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
 """
@@ -162,8 +163,8 @@ write-output \$response | Select-Object -ExpandProperty StatusCode
   echo '---------------------------------'
   def status_code = tmp.
     split("\n").
-    findAll { it =~ /StatusCode/ }.
-    collect { it.replace('StatusCode: ', '') }[0]
+    findAll { it =~ /FINAL_StatusCode/ }.
+    collect { it.replace('FINAL_StatusCode: ', '') }[0]
   echo "Got status code ${status_code}"
 
   // See https://developer.github.com/v3/repos/merging/
