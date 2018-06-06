@@ -137,7 +137,7 @@ def finalize_release(args) {
 \$params = @{
   "base" = "master";
   "head" = "${args.sha}";
-  "commit_message" = "${commit_message}";
+  "commit_message" = "${commit_msg}";
 }
 
 # Use TLS 1.2 (ref https://stackoverflow.com/questions/41618766/)
