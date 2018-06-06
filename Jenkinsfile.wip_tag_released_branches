@@ -461,8 +461,8 @@ HttpResponse doGetHttpRequest(String requestUrl){
         error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
     }    
 
-    this.printDebug("Request (GET):\n  URL: $requestUrl");    
-    this.printDebug("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    println("Request (GET):\n  URL: $requestUrl");    
+    println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
@@ -516,8 +516,8 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
         error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");    
     }    
 
-    this.printDebug("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
-    this.printDebug("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
+    println("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");    
+    println("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");    
 
     return resp;    
 }  
