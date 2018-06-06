@@ -248,7 +248,7 @@ def github_api_merge(args) {
   }
   """
 
-  HttpResponse resp = this.doPutHttpRequestWithJson(body_string, "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges");
+  HttpResponse resp = this.doPostHttpRequestWithJson(body_string, "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges");
 
   echo "RESPONSE = ${resp}"
 
