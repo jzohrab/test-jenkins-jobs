@@ -151,10 +151,8 @@ def finalize_release(args) {
 \$response = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
 
 write-output \$response
-write-output (\$response | Select-Object -ExpandProperty StatusCode | "FINAL_StatusCode: \$_")
-# write-output "FINAL_StatusCode: \${status_code}"
-
-# write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
+\$status_code = \$response | Select-Object -ExpandProperty StatusCode
+write-output "FINAL_StatusCode: \${status_code}"
 """
 
   def tmp = powershell(returnStdout: true, script: myscript).trim()
