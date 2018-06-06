@@ -127,7 +127,9 @@ def finalize_release(args) {
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 \$Base64Token = [System.Convert]::ToBase64String([char[]]'${U}:${P}');
+write-output \$Base64Token;
 \$Headers = @{ Authorization = 'Basic {0}' -f \$Base64Token };
+write-output \$Headers;
 \$params = @{
     "base" = "master";
     "head" = "${args.add_tag}";
