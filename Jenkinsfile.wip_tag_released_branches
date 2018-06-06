@@ -126,6 +126,7 @@ def finalize_release(args) {
 #   powershell-invoke-webrequest-fails-with-ssl-tls-secure-channe
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+write-output '${U}:${P}'
 \$Base64Token = [System.Convert]::ToBase64String([char[]]'${U}:${P}');
 write-output \$Base64Token;
 \$Headers = @{ Authorization = 'Basic {0}' -f \$Base64Token };
