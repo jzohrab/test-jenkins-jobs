@@ -42,27 +42,10 @@ node('sensei_build') {
       return
     }
 
-    // https://developer.github.com/v3/repos/merging/
-    echo "Try using the github API now"
-
     finalize_branches.each { b ->
       echo "Finalizing ${b}"
       finalize_release(b)
     }
-
-
-//    githelper.add_remote(blah)
-//    githelper.fetch('origin', 'develop')
-//    githelper.fetch('origin', 'master')
-//    finalize_branches.each { b ->
-//      branch = b.object.replace('refs/heads/', '')
-//      githelper.fetch('origin', branch)
-//      githelper.add_tag(b.add_tag, b.sha)
-//      bat "git push origin b.add_tag"
-//      merge_and_push(b.add_tag, 'develop')
-//      merge_and_push(b.add_tag, 'master')
-//      delete(branch)
-//    }
 
     // def msg = [ subject: 'hi', body: 'there', channel: 'jenkins-dev-tests' ]
     // senseislack.post_success(msg)
@@ -191,7 +174,6 @@ def github_api_tag(args) {
   }
 
   echo "Got code: ${resp.statusCode}"
-  echo "Got body: ${resp.body}"
   echo "Completed tag creation of ${args.tag}"
 
   if (resp.statusCode != 201) {
