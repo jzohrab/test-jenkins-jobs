@@ -26,8 +26,8 @@ node('sensei_build') {
     
     def genome_release = [
       sites: ['https://genome.klick.com/'],
-      github_org: 'KlickInc',
-      repo_name: 'klick-genome',
+      code_github_org: 'KlickInc',
+      code_repo_name: 'klick-genome',
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
       add_tag: make_tag_name("genome_")
