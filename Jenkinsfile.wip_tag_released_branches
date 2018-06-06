@@ -50,7 +50,6 @@ node('sensei_build') {
     // https://developer.github.com/v3/repos/merging/
     echo "Try using the github API now"
 
-    // https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
     finalize_branches.each { b ->
       echo "Finalizing ${b}"
       finalize_release(b)
@@ -116,21 +115,33 @@ def branches_to_finalize(args) {
 // * merge into develop and push
 // * merge into master and push
 def finalize_release(args) {
-  def github_merge_powershell = ""
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
 
-  def myscript = ""
+  def token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
-    myscript = """
-# Ref: https://stackoverflow.com/questions/41618766/
-#   powershell-invoke-webrequest-fails-with-ssl-tls-secure-channe
+    token = "${U}:${P}"
+  }
+
+  // Groovy headaches: using """ string so that I can interpolate values,
+  // but since we need to declare powershell variables, we have to escape
+  // the powershell dollar signs (e.g., "\$Headers = '...'").
+  //
+  // Powershell and GitHub API: see
+  // https://channel9.msdn.com/Blogs/trevor-powershell/
+  //   Automating-the-GitHub-REST-API-Using-PowerShell
+  //
+  // re [Net.ServicePointManager] line, see 
+  // Ref: https://stackoverflow.com/questions/41618766/
+  //   powershell-invoke-webrequest-fails-with-ssl-tls-secure-channe
+
+  def myscript = """
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-write-output '${U}:${P}'
-\$Base64Token = [System.Convert]::ToBase64String([char[]]'${U}:${P}');
-write-output \$Base64Token;
-\$Headers = @{ Authorization = 'Basic {0}' -f \$Base64Token };
-write-output \$Headers;
+\$Headers = @{
+  Authorization = 'Basic {0}' -f [System.Convert]::ToBase64String([char[]]'${token}')
+};
+# write-output \$Headers;
+
 \$params = @{
     "base" = "master";
     "head" = "${args.sha}";
@@ -139,7 +150,7 @@ write-output \$Headers;
 
 Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
 """
-  } // end with
+
   def tmp = powershell(returnStdout: true, script: myscript).trim()
   echo '---------------------------------'
   echo 'after posting'
