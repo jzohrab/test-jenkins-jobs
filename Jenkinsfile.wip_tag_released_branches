@@ -136,7 +136,7 @@ def finalize_release(args) {
 // Refs:
 // * https://developer.github.com/v3/repos/merging/
 // * https://channel9.msdn.com/Blogs/trevor-powershell/Automating-the-GitHub-REST-API-Using-PowerShell
-def github_api_merge(args)
+def github_api_merge(args) {
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
   def auth_token = "user:github_token"
   withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
