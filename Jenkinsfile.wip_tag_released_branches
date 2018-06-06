@@ -472,7 +472,7 @@ HttpResponse doGetHttpRequest(String requestUrl){
 }  
 
 /**    
- * Posts the json content to the given url and ensures a 200 or 201 status on the response.    
+ * Posts the json content to the given url, ensures a 2xx status on the response.    
  * If a negative status is returned, an error will be raised and the pipeline will fail.    
  */    
 HttpResponse doPostHttpRequestWithJson(String auth_token, String json, String requestUrl){    
@@ -480,7 +480,7 @@ HttpResponse doPostHttpRequestWithJson(String auth_token, String json, String re
 }    
 
 /**    
- * Posts the json content to the given url and ensures a 200 or 201 status on the response.    
+ * Posts the json content to the given url, ensures a 2xx status on the response.
  * If a negative status is returned, an error will be raised and the pipeline will fail.    
  */    
 HttpResponse doPutHttpRequestWithJson(String json, String requestUrl){    
@@ -488,7 +488,7 @@ HttpResponse doPutHttpRequestWithJson(String json, String requestUrl){
 }
 
 /**    
- * Post/Put the json content to the given url and ensures a 200 or 201 status on the response.    
+ * Post/Put the json content to the given url, ensures a 2xx status on the response.
  * If a negative status is returned, an error will be raised and the pipeline will fail.    
  * verb - PUT or POST    
  */    
@@ -497,9 +497,7 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
     HttpURLConnection connection = url.openConnection();    
 
     connection.setRequestMethod(verb);
-    echo "Getting basic_auth value, using token ${auth_token}"
     def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
-    echo "Got basic auth = ${basic_auth}"
     connection.setRequestProperty("Content-Type", "application/json");
     connection.setRequestProperty("Authorization", basic_auth);    
     connection.doOutput = true;    
@@ -516,7 +514,9 @@ HttpResponse doHttpRequestWithJson(String auth_token, String json, String reques
     //parse the response    
     HttpResponse resp = new HttpResponse(connection);    
 
-    if(resp.isFailure()){    
+    connection = null;
+
+    if(resp.isFailure()) {    
         error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");    
     }    
 
@@ -538,14 +538,12 @@ class HttpResponse {
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
 
-        if( statusCode == 200 || statusCode == 201 || statusCode == 204 ){
+        if ( statusCode >= 200 && statusCode < 300 ) {
             //this would fail the pipeline if there was a 400    
             this.body = connection.content.text;
-        } else{
-            this.failure = true;    
-            this.body = connection.getErrorStream().text;    
+        } else {
+            this.failure = true;
+            this.body = connection.getErrorStream().text;
         }    
-
-        connection = null; //set connection to null for good measure, since we are done with it    
     }       
 }
