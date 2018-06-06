@@ -120,7 +120,7 @@ def branches_to_finalize(args) {
 //   Automating-the-GitHub-REST-API-Using-PowerShell
 //
 def finalize_release(args) {
-  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
+  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}x/merges"
   def commit_msg = "Merging ${args.add_tag} into master"
 
   def auth_token = "user:github_token"
@@ -154,16 +154,13 @@ write-output \$response
 write-output "FINAL_StatusCode: \${status_code}"
 """
 
-  def tmp = powershell(returnStdout: true, script: merge_script).trim()
-  echo '---------------------------------'
-  echo 'after posting'
-  echo tmp
-  echo '---------------------------------'
-  def status_code = tmp.
+  def result = powershell(returnStdout: true, script: merge_script).trim()
+  echo result
+  def status_code = result.
     split("\n").
     findAll { it =~ /FINAL_StatusCode/ }.
     collect { it.replace('FINAL_StatusCode: ', '') }[0]
-  echo "Got status code ${status_code}"
+  echo "Status code ${status_code}"
 
   // See https://developer.github.com/v3/repos/merging/
   // for description of status codes.
