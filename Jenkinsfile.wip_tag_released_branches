@@ -169,7 +169,7 @@ def github_api_tag(args) {
     "name" = "${args.username}",
     "email" = "${args.email}",
     "date" = "${datestring}"
-  };
+  },
   "type" = "commit"
 }
   """
