@@ -99,9 +99,12 @@ def finalize_release(args) {
 
 
 def debug_dump_list(title, items) {
-  echo "DEBUG: ${title}"
-  echo items.collect { "* ${it}" }.join("\n")
-  echo "END_DEBUG: ${title}"
+  def content = items.collect { "  * ${it}" }.join("\n")
+  echo """-----------------
+DEBUG: ${title} (${items.size()} items):
+${content}
+END_DEBUG: ${title}
+--------------------"""
 }
 
 
