@@ -203,8 +203,8 @@ def github_api_tag(args) {
   def newtagresult = slurper.parseText(resp.body)
   echo "Got sha of the new tag = ${newtagresult.sha}"
 
-  def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs"
-  def body_string = """
+  uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs"
+  body_string = """
 {
   "ref": "refs/tags/${args.tag}",
   "sha": "${newtagresult.sha}",
@@ -219,6 +219,7 @@ def github_api_tag(args) {
     error "Failed to create ref for tag '${args.tag}': ${err}"
   }
 
+  echo "Completed tag and ref creation of ${args.tag}"
 }
 
 
