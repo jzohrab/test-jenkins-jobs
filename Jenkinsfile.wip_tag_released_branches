@@ -535,20 +535,13 @@ class HttpResponse {
 
     public HttpResponse(HttpURLConnection connection){
 
-// Ref http://jenkins-ci.361315.n4.nabble.com/println-to-script-console-td3901236.html
-def CONFIG = new HashMap() 
-CONFIG.putAll(getBinding().getVariables()) 
-def OUT = CONFIG['out'] 
-
         this.statusCode = connection.responseCode;    
         this.message = connection.responseMessage;    
 
-        OUT.println("DEBUG StatusCode = $statusCode");
         if( statusCode == 200 || statusCode == 201 || statusCode == 204 ){
-            OUT.println("DEBUG getting content");
-            this.body = connection.content.text;//this would fail the pipeline if there was a 400    
-        }else{
-            OUT.println("DEBUG setting failure, getting error stream");
+            //this would fail the pipeline if there was a 400    
+            this.body = connection.content.text;
+        } else{
             this.failure = true;    
             this.body = connection.getErrorStream().text;    
         }    
