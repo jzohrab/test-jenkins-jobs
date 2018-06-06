@@ -148,7 +148,9 @@ def finalize_release(args) {
     "commit_message" = "Merging ${args.add_tag} into master";
   } | ConvertTo-Json
 
-Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
+\$json = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json" | ConvertFrom-Json
+
+write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
 """
 
   def tmp = powershell(returnStdout: true, script: myscript).trim()
@@ -156,6 +158,22 @@ Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -Co
   echo 'after posting'
   echo tmp
   echo '---------------------------------'
+  def status_code = tmp.
+    split("\n").
+    findAll { it =~ /StatusCode/ }.
+    collect { it.replace('StatusCode: ', '') }[0]
+  echo "Got status code ${status_code}"
+
+  // See https://developer.github.com/v3/repos/merging/
+  // for description of status codes.
+  def SUCCESS_CREATED = '201'
+  def SUCCESS_ALREADY_MERGED = '204'
+  if (status_code == SUCCESS_CREATED || status_code == SUCCESS_ALREADY_MERGED ) {
+    return true
+  } else {
+    return false
+  }
+
 }
 
 
