@@ -282,10 +282,19 @@ def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
   // wasteful, but it will work.
   def data = bat(returnStdout: true, script: cmd).
     split("\n").
-    findAll { it =~ pattern }.       // Remove command, and empty blank lines
-    findAll { !(it =~ /\^\{\}$/) }.  // ls-remote adds extra lines with "^{}" for tags
-    collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
-  return data
+    findAll { it =~ pattern }
+
+  // Git ls-remote returns two lines for tags, eg:
+  //   788...  refs/tags/genome_20180522_220000
+  //   a0d... refs/tags/genome_20180522_220000^{}
+  // The line ending with "^{}" is what the tag references, the other
+  // is the sha of the tag itself.
+  // We only care about the reference!
+  if (object_type == '--tags') {
+    data = data.findAll { it =~ /\^\{\}$/ }
+  }
+  
+  return data.collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
 }
 
 
