@@ -7,6 +7,9 @@ def senseislack = new org.klick.SenseiSlack()
 CODE_GITHUB_ORG = 'KlickInc'
 CODE_REPO_NAME = 'klick-genome'
 
+CODE_GITHUB_ORG = 'jeff-zohrab'
+CODE_REPO_NAME = 'klick-genome-CI-stub'
+
 
 node('sensei_build') {
 
