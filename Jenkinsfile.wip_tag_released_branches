@@ -148,11 +148,11 @@ def finalize_release(args) {
     "commit_message" = "Merging ${args.add_tag} into master";
   } | ConvertTo-Json
 
-\$json = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json" | ConvertFrom-Json
+\$response = Invoke-WebRequest -Headers \$Headers -Uri ${uri} -Method POST -Body \$params -ContentType "application/json"
 
-write-output \$json
+write-output \$response
 
-write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
+# write-output "StatusCode: \${ \$json | Select-Object -ExpandProperty StatusCode }"
 """
 
   def tmp = powershell(returnStdout: true, script: myscript).trim()
