@@ -15,43 +15,9 @@ node('sensei_build') {
     def finalize_branches = []
 
     stage('Get release branches') {
-
-      def testing_release = [
-        sites: ['http://localhost:1337/'],
-        code_github_org: 'jeff-zohrab',
-        code_repo_name: 'klick-genome-CI-stub',
-        branch_pattern: "release-\\d+",
-        tag_pattern: "genome_\\d+",
-        add_tag: make_tag_name("genome_")
-      ]
-      finalize_branches += branches_to_finalize(testing_release)
-  
-      def genome_release = [
-        sites: ['https://genome.klick.com/'],
-        code_github_org: 'KlickInc',
-        code_repo_name: 'klick-genome',
-        branch_pattern: "release-\\d+",
-        tag_pattern: "genome_\\d+",
-        add_tag: make_tag_name("genome_")
-      ]
-      finalize_branches += branches_to_finalize(genome_release)
-  
-      def sensei_release = [
-        sites: [
-          'https://uzone.unitedshore.com/',
-          'https://rellyant.senseilabs.com/',
-          'https://base-staging.senseilabs.com/',
-          'https://suncorp.senseilabs.com/',
-          'https://atk-demo.senseilabs.com/',
-          'https://liberty.senseilabs.com/'
-        ],
-        code_github_org: 'KlickInc',
-        code_repo_name: 'klick-genome',
-        branch_pattern: "release-sensei-\\d+",
-        tag_pattern: "GA_\\d+",
-        add_tag: make_tag_name("GA_")
-      ]
-      finalize_branches += branches_to_finalize(sensei_release)
+      finalize_branches += test_release_branches()
+      finalize_branches += genome_release_branches()
+      finalize_branches += sensei_release_branches()
     }
 
     stage('Finalize branches') {
@@ -85,50 +51,6 @@ node('sensei_build') {
 }
 
 
-def test_release_branches() {
-      def testing_release = [
-        sites: ['http://localhost:1337/'],
-        code_github_org: 'jeff-zohrab',
-        code_repo_name: 'klick-genome-CI-stub',
-        branch_pattern: "release-\\d+",
-        tag_pattern: "genome_\\d+",
-        add_tag: make_tag_name("genome_")
-      ]
-      return branches_to_finalize(testing_release)
-}
-
-def genome_release_branches() {
-      def genome_release = [
-        sites: ['https://genome.klick.com/'],
-        code_github_org: 'KlickInc',
-        code_repo_name: 'klick-genome',
-        branch_pattern: "release-\\d+",
-        tag_pattern: "genome_\\d+",
-        add_tag: make_tag_name("genome_")
-      ]
-      return branches_to_finalize(genome_release)
-}
-
-def sensei_release_branches() {
-      def sensei_release = [
-        sites: [
-          'https://uzone.unitedshore.com/',
-          'https://rellyant.senseilabs.com/',
-          'https://base-staging.senseilabs.com/',
-          'https://suncorp.senseilabs.com/',
-          'https://atk-demo.senseilabs.com/',
-          'https://liberty.senseilabs.com/'
-        ],
-        code_github_org: 'KlickInc',
-        code_repo_name: 'klick-genome',
-        branch_pattern: "release-sensei-\\d+",
-        tag_pattern: "GA_\\d+",
-        add_tag: make_tag_name("GA_")
-      ]
-      return branches_to_finalize(sensei_release)
-}
-
-
 ///////////////////////////////////////
 // Utils
 
@@ -153,7 +75,51 @@ ${content}
 ////////////////////////////////////////////////
 // Find release branches that may need to be finalized
 
-// Get branches needing tags and merge
+def test_release_branches() {
+  def testing_release = [
+    sites: ['http://localhost:1337/'],
+    code_github_org: 'jeff-zohrab',
+    code_repo_name: 'klick-genome-CI-stub',
+    branch_pattern: "release-\\d+",
+    tag_pattern: "genome_\\d+",
+    add_tag: make_tag_name("genome_")
+  ]
+  return branches_to_finalize(testing_release)
+}
+
+def genome_release_branches() {
+  def genome_release = [
+    sites: ['https://genome.klick.com/'],
+    code_github_org: 'KlickInc',
+    code_repo_name: 'klick-genome',
+    branch_pattern: "release-\\d+",
+    tag_pattern: "genome_\\d+",
+    add_tag: make_tag_name("genome_")
+  ]
+  return branches_to_finalize(genome_release)
+}
+
+def sensei_release_branches() {
+  def sensei_release = [
+    sites: [
+      'https://uzone.unitedshore.com/',
+      'https://rellyant.senseilabs.com/',
+      'https://base-staging.senseilabs.com/',
+      'https://suncorp.senseilabs.com/',
+      'https://atk-demo.senseilabs.com/',
+      'https://liberty.senseilabs.com/'
+    ],
+    code_github_org: 'KlickInc',
+    code_repo_name: 'klick-genome',
+    branch_pattern: "release-sensei-\\d+",
+    tag_pattern: "GA_\\d+",
+    add_tag: make_tag_name("GA_")
+  ]
+  return branches_to_finalize(sensei_release)
+}
+
+
+// Get branches that need to be tagged and merged
 def branches_to_finalize(args) {
 
     def untagged = get_untagged_release_branches(args)
@@ -176,7 +142,6 @@ def branches_to_finalize(args) {
 
     def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
     def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
-
     debug_dump_list("Untagged but deployed", needs_tag)
 
     return needs_tag.collect { it.add_tag = args.add_tag; it }
