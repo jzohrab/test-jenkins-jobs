@@ -1,8 +1,7 @@
-// Curl site
+// Check repositories
 
 import java.text.SimpleDateFormat
 import groovy.json.JsonSlurper
-
 
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
@@ -16,6 +15,7 @@ node('sensei_build') {
     def finalize_branches = []
 
     stage('Get release branches') {
+
       def testing_release = [
         sites: ['http://localhost:1337/'],
         code_github_org: 'jeff-zohrab',
@@ -36,7 +36,22 @@ node('sensei_build') {
       ]
       finalize_branches += branches_to_finalize(genome_release)
   
-      // TODO: Sensei launches
+      def sensei_release = [
+        sites: [
+          'https://uzone.unitedshore.com/',
+          'https://rellyant.senseilabs.com/',
+          'https://base-staging.senseilabs.com/',
+          'https://suncorp.senseilabs.com/',
+          'https://atk-demo.senseilabs.com/',
+          'https://liberty.senseilabs.com/'
+        ],
+        code_github_org: 'KlickInc',
+        code_repo_name: 'klick-genome',
+        branch_pattern: "release-sensei-\\d+",
+        tag_pattern: "GA_\\d+",
+        add_tag: make_tag_name("GA_")
+      ]
+      finalize_branches += branches_to_finalize(sensei_release)
     }
 
     stage('Finalize branches') {
@@ -83,8 +98,7 @@ def make_tag_name(tag_start) {
 
 def send_finalized_success_slack(b) {
   def branch = b.object.replace('refs/heads/', '')
-  def message = """
-`${branch}` (${b.code_repo_name}) tagged `${b.add_tag}`,
+  def message = """`${branch}` (${b.code_repo_name}) tagged `${b.add_tag}`,
 merged into `master` and `develop`, and deleted.
 """
 
