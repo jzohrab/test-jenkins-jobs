@@ -169,7 +169,13 @@ def finalize_release(args) {
 }
 
 
-
+def get_token(creds_id) {
+  def auth_token = "user:github_token"
+  withCredentials([usernamePassword(credentialsId: creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
+    auth_token = "${U}:${P}"
+  }
+  return auth_token
+}
 
 
 // Create the new tag via the API.
@@ -200,10 +206,7 @@ def github_api_tag(args) {
 }
   """
 
-  def auth_token = "user:github_token"
-  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
-    auth_token = "${U}:${P}"
-  }
+  def auth_token = get_token(args.creds_id)
 
   HttpResponse resp
   try {
