@@ -119,7 +119,7 @@ def branches_to_finalize(args) {
     debug_dump_list("Deployed", deployed)
 
     // If every manifest lookup failed, we're in trouble.
-    if (deployed.findAll { it.error != null }.size() == 0) {
+    if (deployed.findAll { it.error == null }.size() == 0) {
       def msg = deployed.collect { " * ${it.url}: ${it.error}" }.join("\n")
       error "All sha lookups failed!\n${msg}"
     }
