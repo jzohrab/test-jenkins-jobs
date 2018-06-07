@@ -46,16 +46,16 @@ node('sensei_build') {
     ]
     finalize_release_branches("Sensei", sensei_release)
 
-    // def testing_release = [
-    //   sites: ['http://localhost:1337/'],
-    //   code_github_org: 'jeff-zohrab',
-    //   code_repo_name: 'klick-genome-CI-stub',
-    //   branch_pattern: "release-\\d+",
-    //   tag_pattern: "genome_\\d+",
-    //   add_tag: "genome_${yyyyMMdd_HHmmss}",
-    //   slack_channel: 'jenkins-dev-tests'
-    // ]
-    // finalize_release_branches("Testing", testing_release)
+    def testing_release = [
+      sites: ['http://localhost:1337x/'],
+      code_github_org: 'jeff-zohrab',
+      code_repo_name: 'klick-genome-CI-stub',
+      branch_pattern: "release-\\d+",
+      tag_pattern: "genome_\\d+",
+      add_tag: "genome_${yyyyMMdd_HHmmss}",
+      slack_channel: 'jenkins-dev-tests'
+    ]
+    finalize_release_branches("Testing", testing_release)
 
   }
   catch(err) {
@@ -127,6 +127,10 @@ ${content}
 ////////////////////////////////////////////////
 
 // Get branches that need to be tagged and merged
+//
+// * Get all untagged release branches
+// * Get all manifests
+// * If an untagged branch's sha matches the manifest sha, it has been deployed
 def branches_to_finalize(args) {
   def untagged = get_untagged_release_branches(args)
   if (untagged.size() == 0) {
@@ -134,20 +138,15 @@ def branches_to_finalize(args) {
     return []
   }
 
-  def deployed = args.sites.collect { url ->
+  def manifests = args.sites.collect { url ->
     def data = get_deployed_sha_from_manifest(url)
     [ site: url, sha: data.sha, error: data.error ]
   }
-  debug_dump_list("Deployed", deployed)
+  debug_dump_list("Manifests", manifests)
+  fail_if_all_manifest_lookups_failed(manifests)  // If this happens, there's trouble.
 
-  // If every manifest lookup failed, we're in trouble.
-  if (deployed.findAll { it.error == null }.size() == 0) {
-    def msg = deployed.collect { " * ${it.site}: ${it.error}" }.join("\n")
-    error "All sha lookups failed!\n${msg}"
-  }
-
-  def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
-  def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
+  def manifest_shas = manifests.collect { it.sha }.findAll { it != null }
+  def needs_tag = untagged.findAll { b -> manifest_shas.contains(b.sha) }
   debug_dump_list("Untagged but deployed", needs_tag)
 
   return needs_tag.collect { it.add_tag = args.add_tag; it }
@@ -238,6 +237,13 @@ def get_deployed_sha_from_manifest(check_URL) {
   return result
 }
 
+def fail_if_all_manifest_lookups_failed(manifests) {
+  // If every manifest lookup failed, we're in trouble.
+  if (manifests.findAll { it.error == null }.size() == 0) {
+    def msg = manifests.collect { " * ${it.site}: ${it.error}" }.join("\n")
+    error "All manifest lookups failed!\n${msg}"
+  }
+}
 
 ////////////////////////////////////////////////
 // Finalize the release
