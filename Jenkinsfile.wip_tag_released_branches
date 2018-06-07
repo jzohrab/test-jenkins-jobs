@@ -253,11 +253,13 @@ def finalize_release(args) {
   ]
   github_api_tag(tag_args)
 
+  def branch_name = args.object.replace('refs/heads/', '')
+
   for (b in ['develop', 'master']) {
     def merge_args = [
       sha: args.sha,
       base_branch: b,
-      commit_message: "Merge ${args.add_tag} into ${b}",
+      commit_message: "Merge ${branch_name} (tag ${args.add_tag}) into ${b}",
       code_repo_name: args.code_repo_name,
       code_github_org: args.code_github_org,
       creds_id: 'github-ci'
@@ -265,9 +267,8 @@ def finalize_release(args) {
     github_api_merge(merge_args)
   }
 
-  def delete_branch = args.object.replace('refs/heads/', '')
   def delete_args = [
-    branch: delete_branch,
+    branch: branch_name,
     code_repo_name: args.code_repo_name,
     code_github_org: args.code_github_org,
     creds_id: 'github-ci'
