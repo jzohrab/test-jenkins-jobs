@@ -85,8 +85,52 @@ node('sensei_build') {
 }
 
 
-///////////////////////////////////////
+def test_release_branches() {
+      def testing_release = [
+        sites: ['http://localhost:1337/'],
+        code_github_org: 'jeff-zohrab',
+        code_repo_name: 'klick-genome-CI-stub',
+        branch_pattern: "release-\\d+",
+        tag_pattern: "genome_\\d+",
+        add_tag: make_tag_name("genome_")
+      ]
+      return branches_to_finalize(testing_release)
+}
 
+def genome_release_branches() {
+      def genome_release = [
+        sites: ['https://genome.klick.com/'],
+        code_github_org: 'KlickInc',
+        code_repo_name: 'klick-genome',
+        branch_pattern: "release-\\d+",
+        tag_pattern: "genome_\\d+",
+        add_tag: make_tag_name("genome_")
+      ]
+      return branches_to_finalize(genome_release)
+}
+
+def sensei_release_branches() {
+      def sensei_release = [
+        sites: [
+          'https://uzone.unitedshore.com/',
+          'https://rellyant.senseilabs.com/',
+          'https://base-staging.senseilabs.com/',
+          'https://suncorp.senseilabs.com/',
+          'https://atk-demo.senseilabs.com/',
+          'https://liberty.senseilabs.com/'
+        ],
+        code_github_org: 'KlickInc',
+        code_repo_name: 'klick-genome',
+        branch_pattern: "release-sensei-\\d+",
+        tag_pattern: "GA_\\d+",
+        add_tag: make_tag_name("GA_")
+      ]
+      return branches_to_finalize(sensei_release)
+}
+
+
+///////////////////////////////////////
+// Utils
 
 def make_tag_name(tag_start) {
   def dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
@@ -96,26 +140,18 @@ def make_tag_name(tag_start) {
 }
 
 
-def send_finalized_success_slack(b) {
-  def branch = b.object.replace('refs/heads/', '')
-  def message = """`${branch}` (${b.code_repo_name}) tagged `${b.add_tag}`,
-merged into `master` and `develop`, and deleted.
-"""
-
-  def msg = [ subject: "Finalize ${branch}", body: message, channel: SLACK_CHANNEL ]
-  def senseislack = new org.klick.SenseiSlack()
-  senseislack.post_success(msg)
+def debug_dump_list(title, items) {
+  def content = items.collect { "  * ${it}" }.join("\n")
+  if (content == null) { content = "  (no items)" }
+  echo """-----------------
+DEBUG: ${title} (${items.size()} items):
+${content}
+--------------------"""
 }
 
 
-def send_finalized_failure_slack(b, err) {
-  def branch = b.object.replace('refs/heads/', '')
-  def message = "Error: ${err}"
-  def msg = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
-  def senseislack = new org.klick.SenseiSlack()
-  senseislack.post_failure(msg)
-}
-
+////////////////////////////////////////////////
+// Find release branches that may need to be finalized
 
 // Get branches needing tags and merge
 def branches_to_finalize(args) {
@@ -147,7 +183,93 @@ def branches_to_finalize(args) {
 }
 
 
-// Finalize the release:
+
+def get_untagged_release_branches(args) {
+    withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
+      def repo_url = "https://${U}:${P}@github.com/${args.code_github_org}/${args.code_repo_name}"
+      def tag_regex = /refs\/tags\/${args.tag_pattern}/
+      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_regex)
+      def tag_shas = tag_list.collect { it.sha }
+
+      def branch_regex = /refs\/heads\/${args.branch_pattern}/
+      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_regex)
+      def tagged_branches = branch_list.findAll { (tag_shas.contains(it.sha)) }
+      def untagged_branches = branch_list.
+        findAll { !(tag_shas.contains(it.sha)) }.
+	collect {
+	  it.code_repo_name = args.code_repo_name
+	  it.code_github_org = args.code_github_org
+	  it
+	}
+
+      // debug_dump_list("Tags matching ${tag_regex}", tag_list)
+      // debug_dump_list("Tag shas", tag_shas)
+      debug_dump_list("All branches matching ${branch_regex}", branch_list)
+      debug_dump_list("Branches matching ${branch_regex}, already tagged with ${tag_regex}", tagged_branches)
+      debug_dump_list("Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
+
+      return untagged_branches
+    }
+}
+
+
+def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
+  def cmd = "git ls-remote ${object_type} ${repo_url}"
+  // I tried using <refs> to limit the output of ls-remote, but it didn't work
+  // (would filter out all branches/tags).  Getting everything and filtering locally ...
+  // wasteful, but it will work.
+  def data = bat(returnStdout: true, script: cmd).
+    split("\n").
+    findAll { it =~ pattern }
+
+  // Git ls-remote returns two lines for tags, eg:
+  //   788...  refs/tags/genome_20180522_220000
+  //   a0d... refs/tags/genome_20180522_220000^{}
+  // The line ending with "^{}" is what the tag references, the other
+  // is the sha of the tag itself.
+  // We only care about the reference!
+  if (object_type == '--tags') {
+    data = data.findAll { it =~ /\^\{\}$/ }
+  }
+
+  return data.collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
+}
+
+
+////////////////////////////////////////////////
+// Manifest sha lookup
+
+// Get the sha from the deployed manifest.
+def get_deployed_sha_from_manifest(check_URL) {
+  def result = [ sha: null, error: null ]
+
+  manifest_url = "${check_URL}/manifest.json"
+  echo "Checking ${manifest_url}"
+  try {
+    // See https://stackoverflow.com/questions/1408042/
+    //   output-data-with-no-column-headings-using-powershel
+    // for notes on the "-ExpandProperty" flag.
+    def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
+
+    def tmp = powershell(returnStdout: true, script: myscript).trim()
+    if (tmp.trim().size() == 0) { tmp = null }
+    result.sha = tmp
+    if (result.sha == null) {
+      result.error = "Null sha (missing vcs-sha from ${manifest_url} ?)"
+    }
+  }
+  catch (err) {
+    result.error = "Error getting sha from ${manifest_url}: ${err} (check Jenkins log for details)"
+  }
+
+  return result
+}
+
+
+////////////////////////////////////////////////
+// Finalize the release
+
+// Finalize
 // * tag any untagged release branch that has been deployed
 // * merge into develop and push
 // * merge into master and push
@@ -187,6 +309,35 @@ def finalize_release(args) {
   github_api_delete_branch(delete_args)
 
 }
+
+
+/////////////////////////////
+// Slack
+
+def send_finalized_success_slack(b) {
+  def branch = b.object.replace('refs/heads/', '')
+  def message = """`${branch}` (${b.code_repo_name}) tagged `${b.add_tag}`,
+merged into `master` and `develop`, and deleted.
+"""
+
+  def msg = [ subject: "Finalize ${branch}", body: message, channel: SLACK_CHANNEL ]
+  def senseislack = new org.klick.SenseiSlack()
+  senseislack.post_success(msg)
+}
+
+
+def send_finalized_failure_slack(b, err) {
+  def branch = b.object.replace('refs/heads/', '')
+  def message = "Error: ${err}"
+  def msg = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
+  def senseislack = new org.klick.SenseiSlack()
+  senseislack.post_failure(msg)
+}
+
+
+
+/////////////////////////////
+// GitHub API calls
 
 
 def get_token(creds_id) {
@@ -317,100 +468,9 @@ def github_api_delete_branch(args) {
 }
 
 
-
-def debug_dump_list(title, items) {
-  def content = items.collect { "  * ${it}" }.join("\n")
-  if (content == null) { content = "  (no items)" }
-  echo """-----------------
-DEBUG: ${title} (${items.size()} items):
-${content}
---------------------"""
-}
-
-
-// Get the sha from the deployed manifest.
-def get_deployed_sha_from_manifest(check_URL) {
-  def result = [ sha: null, error: null ]
-
-  manifest_url = "${check_URL}/manifest.json"
-  echo "Checking ${manifest_url}"
-  try {
-    // See https://stackoverflow.com/questions/1408042/
-    //   output-data-with-no-column-headings-using-powershel
-    // for notes on the "-ExpandProperty" flag.
-    def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
-
-    def tmp = powershell(returnStdout: true, script: myscript).trim()
-    if (tmp.trim().size() == 0) { tmp = null }
-    result.sha = tmp
-    if (result.sha == null) {
-      result.error = "Null sha (missing vcs-sha from ${manifest_url} ?)"
-    }
-  }
-  catch (err) {
-    result.error = "Error getting sha from ${manifest_url}: ${err} (check Jenkins log for details)"
-  }
-
-  return result
-}
-
-
-
-def ls_remote_objects_matching_pattern(repo_url, object_type, pattern) {
-  def cmd = "git ls-remote ${object_type} ${repo_url}"
-  // I tried using <refs> to limit the output of ls-remote, but it didn't work
-  // (would filter out all branches/tags).  Getting everything and filtering locally ...
-  // wasteful, but it will work.
-  def data = bat(returnStdout: true, script: cmd).
-    split("\n").
-    findAll { it =~ pattern }
-
-  // Git ls-remote returns two lines for tags, eg:
-  //   788...  refs/tags/genome_20180522_220000
-  //   a0d... refs/tags/genome_20180522_220000^{}
-  // The line ending with "^{}" is what the tag references, the other
-  // is the sha of the tag itself.
-  // We only care about the reference!
-  if (object_type == '--tags') {
-    data = data.findAll { it =~ /\^\{\}$/ }
-  }
-
-  return data.collect { [ sha: it.split("\t")[0], object: it.split("\t")[1] ] }
-}
-
-
-def get_untagged_release_branches(args) {
-    withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
-      def repo_url = "https://${U}:${P}@github.com/${args.code_github_org}/${args.code_repo_name}"
-      def tag_regex = /refs\/tags\/${args.tag_pattern}/
-      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_regex)
-      def tag_shas = tag_list.collect { it.sha }
-
-      def branch_regex = /refs\/heads\/${args.branch_pattern}/
-      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_regex)
-      def tagged_branches = branch_list.findAll { (tag_shas.contains(it.sha)) }
-      def untagged_branches = branch_list.
-        findAll { !(tag_shas.contains(it.sha)) }.
-	collect {
-	  it.code_repo_name = args.code_repo_name
-	  it.code_github_org = args.code_github_org
-	  it
-	}
-
-      // debug_dump_list("Tags matching ${tag_regex}", tag_list)
-      // debug_dump_list("Tag shas", tag_shas)
-      debug_dump_list("All branches matching ${branch_regex}", branch_list)
-      debug_dump_list("Branches matching ${branch_regex}, already tagged with ${tag_regex}", tagged_branches)
-      debug_dump_list("Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
-
-      return untagged_branches
-    }
-}
-
-
-
-/////////////////////////////
-// trying https://stackoverflow.com/questions/34682099/how-to-call-rest-from-jenkins-workflow/34875259
+////////////////////////////////////
+// Native Groovy REST calls
+// per https://stackoverflow.com/questions/34682099/how-to-call-rest-from-jenkins-workflow/34875259
 
 HttpResponse doGetHttpRequest(String requestUrl){
     URL url = new URL(requestUrl);
