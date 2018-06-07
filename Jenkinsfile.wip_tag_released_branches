@@ -12,34 +12,47 @@ node('sensei_build') {
 
   try {
 
-    def finalize_branches = []
+    def yyyyMMdd_HHmmss = get_datetime_tag_string()
 
-    stage('Get release branches') {
-      finalize_branches += test_release_branches()
-      finalize_branches += genome_release_branches()
-      finalize_branches += sensei_release_branches()
-    }
-
-    stage('Finalize branches') {
-      debug_dump_list("Finalize", finalize_branches)
-      if (finalize_branches.size() == 0) {
-        echo "No release branches need tagging/merging, exiting."
-      }
+    def testing_release = [
+      sites: ['http://localhost:1337/'],
+      code_github_org: 'jeff-zohrab',
+      code_repo_name: 'klick-genome-CI-stub',
+      branch_pattern: "release-\\d+",
+      tag_pattern: "genome_\\d+",
+      add_tag: "genome_${yyyyMMdd_HHmmss}"),
+      slack_channel: 'jenkins-dev-tests'
+    ]
+    finalize_release_branches("Testing", testing_release)
   
-      finalize_branches.each { b ->
-        try {
-          echo "Finalizing ${b}"
-          finalize_release(b)
-          send_finalized_success_slack(b)
-        }
-        catch(err) {
-          echo "Error finalizing ${b}:\n${err}"
-          send_finalized_failure_slack(b, err)
-          currentBuild.result = 'FAILURE'
-        }
-      }
+    def genome_release = [
+      sites: ['https://genome.klick.com/'],
+      code_github_org: 'KlickInc',
+      code_repo_name: 'klick-genome',
+      branch_pattern: "release-\\d+",
+      tag_pattern: "genome_\\d+",
+      add_tag: "genome_${yyyyMMdd_HHmmss}",
+      slack_channel: 'launches'
+    ]
+    finalize_release_branches("Genome", genome_release)
 
-    }
+    def sensei_release = [
+      sites: [
+        'https://uzone.unitedshore.com/',
+        'https://rellyant.senseilabs.com/',
+        'https://base-staging.senseilabs.com/',
+        'https://suncorp.senseilabs.com/',
+        'https://atk-demo.senseilabs.com/',
+        'https://liberty.senseilabs.com/'
+      ],
+      code_github_org: 'KlickInc',
+      code_repo_name: 'klick-genome',
+      branch_pattern: "release-sensei-\\d+",
+      tag_pattern: "GA_\\d+",
+      add_tag: "GA_${yyyyMMdd_HHmmss}",
+      slack_channel: 'launches'
+    ]
+    finalize_release_branches("Sensei", sensei_release)
 
   }
   catch(err) {
@@ -51,16 +64,52 @@ node('sensei_build') {
 }
 
 
-///////////////////////////////////////
-// Utils
-
-def make_tag_name(tag_start) {
+def get_datetime_tag_string() {
   def dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
   def date = new Date()
-  def tagname = tag_start + dateFormat.format(date)
-  return tagname
+  return dateFormat.format(date)
 }
 
+
+////////////////////////////////////////////////
+// Main routine
+
+
+def finalize_release_branches(title, args) {
+
+  echo "*************** ${title} **************************"
+
+  def finalize_branches = []
+
+  stage("Get release branches (${title})") {
+    finalize_branches = branches_to_finalize(args)
+  }
+
+  stage("Finalize branches (${title})") {
+    debug_dump_list("Finalize", finalize_branches)
+    if (finalize_branches.size() == 0) {
+      echo "No release branches need tagging/merging, exiting."
+    }
+
+    finalize_branches.each { b ->
+      try {
+        echo "Finalizing ${b}"
+        finalize_release(b)
+        send_finalized_success_slack(b, args.slack_channel)
+      }
+      catch(err) {
+        echo "Error finalizing ${b}:\n${err}"
+        send_finalized_failure_slack(b, err, args.slack_channel)
+        currentBuild.result = 'FAILURE'
+      }
+    }
+
+  }
+
+}
+
+////////////////////////////////////////////////
+// Debug utils
 
 def debug_dump_list(title, items) {
   def content = items.collect { "  * ${it}" }.join("\n")
@@ -73,51 +122,6 @@ ${content}
 
 
 ////////////////////////////////////////////////
-// Find release branches that may need to be finalized
-
-def test_release_branches() {
-  def testing_release = [
-    sites: ['http://localhost:1337/'],
-    code_github_org: 'jeff-zohrab',
-    code_repo_name: 'klick-genome-CI-stub',
-    branch_pattern: "release-\\d+",
-    tag_pattern: "genome_\\d+",
-    add_tag: make_tag_name("genome_")
-  ]
-  return branches_to_finalize(testing_release)
-}
-
-def genome_release_branches() {
-  def genome_release = [
-    sites: ['https://genome.klick.com/'],
-    code_github_org: 'KlickInc',
-    code_repo_name: 'klick-genome',
-    branch_pattern: "release-\\d+",
-    tag_pattern: "genome_\\d+",
-    add_tag: make_tag_name("genome_")
-  ]
-  return branches_to_finalize(genome_release)
-}
-
-def sensei_release_branches() {
-  def sensei_release = [
-    sites: [
-      'https://uzone.unitedshore.com/',
-      'https://rellyant.senseilabs.com/',
-      'https://base-staging.senseilabs.com/',
-      'https://suncorp.senseilabs.com/',
-      'https://atk-demo.senseilabs.com/',
-      'https://liberty.senseilabs.com/'
-    ],
-    code_github_org: 'KlickInc',
-    code_repo_name: 'klick-genome',
-    branch_pattern: "release-sensei-\\d+",
-    tag_pattern: "GA_\\d+",
-    add_tag: make_tag_name("GA_")
-  ]
-  return branches_to_finalize(sensei_release)
-}
-
 
 // Get branches that need to be tagged and merged
 def branches_to_finalize(args) {
@@ -281,22 +285,22 @@ def finalize_release(args) {
 /////////////////////////////
 // Slack
 
-def send_finalized_success_slack(b) {
+def send_finalized_success_slack(b, slack_channel) {
   def branch = b.object.replace('refs/heads/', '')
   def message = """`${branch}` (${b.code_repo_name}) tagged `${b.add_tag}`,
 merged into `master` and `develop`, and deleted.
 """
 
-  def msg = [ subject: "Finalize ${branch}", body: message, channel: SLACK_CHANNEL ]
+  def msg = [ subject: "Finalize ${branch}", body: message, channel: slack_channel ]
   def senseislack = new org.klick.SenseiSlack()
   senseislack.post_success(msg)
 }
 
 
-def send_finalized_failure_slack(b, err) {
+def send_finalized_failure_slack(b, err, slack_channel) {
   def branch = b.object.replace('refs/heads/', '')
   def message = "Error: ${err}"
-  def msg = [ subject: "Finalize ${branch} failed", body: message, channel: SLACK_CHANNEL ]
+  def msg = [ subject: "Finalize ${branch} failed", body: message, channel: slack_channel ]
   def senseislack = new org.klick.SenseiSlack()
   senseislack.post_failure(msg)
 }
