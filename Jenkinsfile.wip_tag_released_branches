@@ -1,7 +1,14 @@
 // Job to tag untagged release branches, merge into develop and
 // master, and delete.
 //
-// 
+// Outline:
+// * get all untagged release branches
+// * check all site manifest SHAs
+// * if any manifest sha is the same as the untagged release branch:
+//   * tag the branch
+//   * merge into master and develop
+//   * delete the branch
+
 
 import java.text.SimpleDateFormat
 import groovy.json.JsonSlurper
@@ -46,16 +53,16 @@ node('sensei_build') {
     ]
     finalize_release_branches("Sensei", sensei_release)
 
-    def testing_release = [
-      sites: ['http://localhost:1337x/'],
-      code_github_org: 'jeff-zohrab',
-      code_repo_name: 'klick-genome-CI-stub',
-      branch_pattern: "release-\\d+",
-      tag_pattern: "genome_\\d+",
-      add_tag: "genome_${yyyyMMdd_HHmmss}",
-      slack_channel: 'jenkins-dev-tests'
-    ]
-    finalize_release_branches("Testing", testing_release)
+    // def testing_release = [
+    //   sites: ['http://localhost:1337/'],
+    //   code_github_org: 'jeff-zohrab',
+    //   code_repo_name: 'klick-genome-CI-stub',
+    //   branch_pattern: "release-\\d+",
+    //   tag_pattern: "genome_\\d+",
+    //   add_tag: "genome_${yyyyMMdd_HHmmss}",
+    //   slack_channel: 'jenkins-dev-tests'
+    // ]
+    // finalize_release_branches("Testing", testing_release)
 
   }
   catch(err) {
