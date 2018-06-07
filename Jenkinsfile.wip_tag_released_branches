@@ -120,7 +120,7 @@ def branches_to_finalize(args) {
 
     // If every manifest lookup failed, we're in trouble.
     if (deployed.findAll { it.error == null }.size() == 0) {
-      def msg = deployed.collect { " * ${it.url}: ${it.error}" }.join("\n")
+      def msg = deployed.collect { " * ${it.site}: ${it.error}" }.join("\n")
       error "All sha lookups failed!\n${msg}"
     }
 
@@ -319,10 +319,13 @@ def get_deployed_sha_from_manifest(check_URL) {
   def result = [ sha: null, error: null ]
 
   manifest_url = "${check_URL}/manifest.json"
+  echo "Checking ${manifest_url}"
   try {
-    // See https://stackoverflow.com/questions/1408042/output-data-with-no-column-headings-using-powershel
-    // re "-ExpandProperty" flag.
+    // See https://stackoverflow.com/questions/1408042/
+    //   output-data-with-no-column-headings-using-powershel
+    // for notes on the "-ExpandProperty" flag.
     def myscript = "Invoke-WebRequest ${manifest_url} | ConvertFrom-Json | Select -ExpandProperty vcs-sha"
+
     def tmp = powershell(returnStdout: true, script: myscript).trim()
     if (tmp.trim().size() == 0) { tmp = null }
     result.sha = tmp
@@ -331,7 +334,7 @@ def get_deployed_sha_from_manifest(check_URL) {
     }
   }
   catch (err) {
-    result.error = "Error getting sha from ${manifest_url}: ${err} (check the log for details)"
+    result.error = "Error getting sha from ${manifest_url}: ${err} (check Jenkins log for details)"
   }
 
   return result
