@@ -116,11 +116,17 @@ def branches_to_finalize(args) {
       def data = get_deployed_sha_from_manifest(url)
       [ site: url, sha: data.sha, error: data.error ]
     }
+    debug_dump_list("Deployed", deployed)
+
+    // If every manifest lookup failed, we're in trouble.
+    if (deployed.findAll { it.error != null }.size() == 0) {
+      def msg = deployed.collect { " * ${it.url}: ${it.error}" }.join("\n")
+      error "All sha lookups failed!\n${msg}"
+    }
 
     def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
     def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
 
-    debug_dump_list("Deployed", deployed)
     debug_dump_list("Untagged but deployed", needs_tag)
 
     return needs_tag.collect { it.add_tag = args.add_tag; it }
@@ -181,15 +187,16 @@ def get_token(creds_id) {
 // Create the new tag via the API.
 //
 // Refs:
-// * https://stackoverflow.com/questions/15672547/how-to-tag-a-commit-in-api-using-curl-command
-//   (the GitHub docs aren't v. good for this, use the above)
+// * https://stackoverflow.com/questions/15672547/
+//     how-to-tag-a-commit-in-api-using-curl-command
+//   (the GitHub docs aren't good for this, above is better)
 def github_api_tag(args) {
 
   def dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
   def date = new Date()
-  // Hardcoding 4-hour offset, couldn't get that simply in Groovy and not worth spending time on.
+  // Hardcoding 4-hour offset, couldn't get that simply in Groovy
+  // and it's not worth spending time on.
   def datestring = "${dateFormat.format(date)}-04:00"
-  echo "DEBUG: creating tag with date = ${datestring}"
 
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/tags"
   def body_string = """
