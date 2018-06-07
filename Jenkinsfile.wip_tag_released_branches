@@ -20,7 +20,7 @@ node('sensei_build') {
       code_repo_name: 'klick-genome-CI-stub',
       branch_pattern: "release-\\d+",
       tag_pattern: "genome_\\d+",
-      add_tag: "genome_${yyyyMMdd_HHmmss}"),
+      add_tag: "genome_${yyyyMMdd_HHmmss}",
       slack_channel: 'jenkins-dev-tests'
     ]
     finalize_release_branches("Testing", testing_release)
