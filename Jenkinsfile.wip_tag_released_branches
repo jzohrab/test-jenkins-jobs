@@ -1,4 +1,7 @@
-// Check repositories
+// Job to tag untagged release branches, merge into develop and
+// master, and delete.
+//
+// 
 
 import java.text.SimpleDateFormat
 import groovy.json.JsonSlurper
@@ -6,7 +9,7 @@ import groovy.json.JsonSlurper
 @Library('genome') _
 def senseislack = new org.klick.SenseiSlack()
 
-SLACK_CHANNEL = 'jenkins-dev-tests'  // TODO change this
+SLACK_CHANNEL = 'jenkins'
 
 node('sensei_build') {
 
@@ -14,17 +17,6 @@ node('sensei_build') {
 
     def yyyyMMdd_HHmmss = get_datetime_tag_string()
 
-    def testing_release = [
-      sites: ['http://localhost:1337/'],
-      code_github_org: 'jeff-zohrab',
-      code_repo_name: 'klick-genome-CI-stub',
-      branch_pattern: "release-\\d+",
-      tag_pattern: "genome_\\d+",
-      add_tag: "genome_${yyyyMMdd_HHmmss}",
-      slack_channel: 'jenkins-dev-tests'
-    ]
-    finalize_release_branches("Testing", testing_release)
-  
     def genome_release = [
       sites: ['https://genome.klick.com/'],
       code_github_org: 'KlickInc',
@@ -53,6 +45,17 @@ node('sensei_build') {
       slack_channel: 'launches'
     ]
     finalize_release_branches("Sensei", sensei_release)
+
+    // def testing_release = [
+    //   sites: ['http://localhost:1337/'],
+    //   code_github_org: 'jeff-zohrab',
+    //   code_repo_name: 'klick-genome-CI-stub',
+    //   branch_pattern: "release-\\d+",
+    //   tag_pattern: "genome_\\d+",
+    //   add_tag: "genome_${yyyyMMdd_HHmmss}",
+    //   slack_channel: 'jenkins-dev-tests'
+    // ]
+    // finalize_release_branches("Testing", testing_release)
 
   }
   catch(err) {
