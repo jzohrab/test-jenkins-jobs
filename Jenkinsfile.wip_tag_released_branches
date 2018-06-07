@@ -207,7 +207,6 @@ def github_api_tag(args) {
   """
 
   def auth_token = get_token(args.creds_id)
-
   HttpResponse resp
   try {
     resp = this.doPostHttpRequestWithJson(auth_token, body_string, uri);
@@ -254,11 +253,6 @@ def github_api_tag(args) {
 // GitHub API only allows for merging by branch or sha.
 // Ref https://developer.github.com/v3/repos/merging/
 def github_api_merge(args) {
-  def auth_token = "user:github_token"
-  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
-    auth_token = "${U}:${P}"
-  }
-
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/merges"
   def body_string = """
   {
@@ -268,6 +262,7 @@ def github_api_merge(args) {
   }
   """
 
+  def auth_token = get_token(args.creds_id)
   HttpResponse resp
   try {
     resp = this.doPostHttpRequestWithJson(auth_token, body_string, uri);
@@ -286,13 +281,9 @@ def github_api_merge(args) {
 def github_api_delete_branch(args) {
   echo "DELETING: ${args}"
 
-  def auth_token = "user:github_token"
-  withCredentials([usernamePassword(credentialsId: args.creds_id, passwordVariable: 'P', usernameVariable: 'U')]) {
-    auth_token = "${U}:${P}"
-  }
-
   def uri = "https://api.github.com/repos/${args.code_github_org}/${args.code_repo_name}/git/refs/heads/${args.branch}"
 
+  def auth_token = get_token(args.creds_id)
   HttpResponse resp
   try {
     resp = this.doDeleteHttpRequest(auth_token, uri);
