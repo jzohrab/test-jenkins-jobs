@@ -64,7 +64,7 @@ def make_tag_name(tag_start) {
 
 def debug_dump_list(title, items) {
   def content = items.collect { "  * ${it}" }.join("\n")
-  if (content == null) { content = "  (no items)" }
+  if (content.size() == 0) { content = "  (no items)" }
   echo """-----------------
 DEBUG: ${title} (${items.size()} items):
 ${content}
