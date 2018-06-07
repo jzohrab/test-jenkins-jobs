@@ -52,7 +52,9 @@ node('sensei_build') {
           send_finalized_success_slack(b)
         }
         catch(err) {
+          echo "Error finalizing ${b}:\n${err}"
           send_finalized_failure_slack(b, err)
+          currentBuild.result = 'FAILURE'
         }
       }
 
