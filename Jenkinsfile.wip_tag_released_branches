@@ -121,60 +121,61 @@ def sensei_release_branches() {
 
 // Get branches that need to be tagged and merged
 def branches_to_finalize(args) {
+  def untagged = get_untagged_release_branches(args)
+  if (untagged.size() == 0) {
+    echo "No untagged branches, exiting."
+    return []
+  }
 
-    def untagged = get_untagged_release_branches(args)
-    if (untagged.size() == 0) {
-      echo "No untagged branches, exiting."
-      return []
-    }
+  def deployed = args.sites.collect { url ->
+    def data = get_deployed_sha_from_manifest(url)
+    [ site: url, sha: data.sha, error: data.error ]
+  }
+  debug_dump_list("Deployed", deployed)
 
-    def deployed = args.sites.collect { url ->
-      def data = get_deployed_sha_from_manifest(url)
-      [ site: url, sha: data.sha, error: data.error ]
-    }
-    debug_dump_list("Deployed", deployed)
+  // If every manifest lookup failed, we're in trouble.
+  if (deployed.findAll { it.error == null }.size() == 0) {
+    def msg = deployed.collect { " * ${it.site}: ${it.error}" }.join("\n")
+    error "All sha lookups failed!\n${msg}"
+  }
 
-    // If every manifest lookup failed, we're in trouble.
-    if (deployed.findAll { it.error == null }.size() == 0) {
-      def msg = deployed.collect { " * ${it.site}: ${it.error}" }.join("\n")
-      error "All sha lookups failed!\n${msg}"
-    }
+  def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
+  def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
+  debug_dump_list("Untagged but deployed", needs_tag)
 
-    def deployed_shas = deployed.collect { it.sha }.findAll { it != null }
-    def needs_tag = untagged.findAll { b -> deployed_shas.contains(b.sha) }
-    debug_dump_list("Untagged but deployed", needs_tag)
-
-    return needs_tag.collect { it.add_tag = args.add_tag; it }
+  return needs_tag.collect { it.add_tag = args.add_tag; it }
 }
 
 
 
 def get_untagged_release_branches(args) {
-    withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
-      def repo_url = "https://${U}:${P}@github.com/${args.code_github_org}/${args.code_repo_name}"
-      def tag_regex = /refs\/tags\/${args.tag_pattern}/
-      def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_regex)
-      def tag_shas = tag_list.collect { it.sha }
+  def repo_url = ""
+  withCredentials([usernamePassword(credentialsId: 'github-ci', passwordVariable: 'P', usernameVariable: 'U')]) {
+    repo_url = "https://${U}:${P}@github.com/${args.code_github_org}/${args.code_repo_name}"
+  }
+    
+  def tag_regex = /refs\/tags\/${args.tag_pattern}/
+  def tag_list = ls_remote_objects_matching_pattern(repo_url, '--tags', tag_regex)
+  def tag_shas = tag_list.collect { it.sha }
 
-      def branch_regex = /refs\/heads\/${args.branch_pattern}/
-      def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_regex)
-      def tagged_branches = branch_list.findAll { (tag_shas.contains(it.sha)) }
-      def untagged_branches = branch_list.
-        findAll { !(tag_shas.contains(it.sha)) }.
-	collect {
-	  it.code_repo_name = args.code_repo_name
-	  it.code_github_org = args.code_github_org
-	  it
-	}
-
-      // debug_dump_list("Tags matching ${tag_regex}", tag_list)
-      // debug_dump_list("Tag shas", tag_shas)
-      debug_dump_list("All branches matching ${branch_regex}", branch_list)
-      debug_dump_list("Branches matching ${branch_regex}, already tagged with ${tag_regex}", tagged_branches)
-      debug_dump_list("Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
-
-      return untagged_branches
+  def branch_regex = /refs\/heads\/${args.branch_pattern}/
+  def branch_list = ls_remote_objects_matching_pattern(repo_url, '--heads', branch_regex)
+  def tagged_branches = branch_list.findAll { (tag_shas.contains(it.sha)) }
+  def untagged_branches = branch_list.
+    findAll { !(tag_shas.contains(it.sha)) }.
+    collect {
+      it.code_repo_name = args.code_repo_name
+      it.code_github_org = args.code_github_org
+      it
     }
+
+  // debug_dump_list("Tags matching ${tag_regex}", tag_list)
+  // debug_dump_list("Tag shas", tag_shas)
+  debug_dump_list("All branches matching ${branch_regex}", branch_list)
+  debug_dump_list("Branches matching ${branch_regex}, already tagged with ${tag_regex}", tagged_branches)
+  debug_dump_list("Branches matching ${branch_regex}, NOT YET tagged with ${tag_regex}", untagged_branches)
+
+  return untagged_branches
 }
 
 
@@ -438,48 +439,48 @@ def github_api_delete_branch(args) {
 // per https://stackoverflow.com/questions/34682099/how-to-call-rest-from-jenkins-workflow/34875259
 
 HttpResponse doGetHttpRequest(String requestUrl){
-    URL url = new URL(requestUrl);
-    HttpURLConnection connection = url.openConnection();
+  URL url = new URL(requestUrl);
+  HttpURLConnection connection = url.openConnection();
 
-    connection.setRequestMethod("GET");
+  connection.setRequestMethod("GET");
 
-    //get the request
-    connection.connect();
+  //get the request
+  connection.connect();
 
-    //parse the response
-    HttpResponse resp = new HttpResponse(connection);
+  //parse the response
+  HttpResponse resp = new HttpResponse(connection);
 
-    if(resp.isFailure()){
-        error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
-    }
+  if(resp.isFailure()){
+      error("\nGET from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+  }
 
-    echo("Request (GET):\n  URL: $requestUrl");
-    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+  echo("Request (GET):\n  URL: $requestUrl");
+  echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
 
-    return resp;
+  return resp;
 }
 
 
 HttpResponse doDeleteHttpRequest(String auth_token, String requestUrl){
-    URL url = new URL(requestUrl);
-    HttpURLConnection connection = url.openConnection();
+  URL url = new URL(requestUrl);
+  HttpURLConnection connection = url.openConnection();
 
-    def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
-    connection.setRequestProperty("Authorization", basic_auth);
-    connection.setRequestMethod("DELETE");
+  def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
+  connection.setRequestProperty("Authorization", basic_auth);
+  connection.setRequestMethod("DELETE");
 
-    connection.connect();
+  connection.connect();
 
-    HttpResponse resp = new HttpResponse(connection);
+  HttpResponse resp = new HttpResponse(connection);
 
-    if(resp.isFailure()){
-        error("\nDELETE from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
-    }
+  if(resp.isFailure()){
+      error("\nDELETE from URL: $requestUrl\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+  }
 
-    echo("Request (DELETE):\n  URL: $requestUrl");
-    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+  echo("Request (DELETE):\n  URL: $requestUrl");
+  echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
 
-    return resp;
+  return resp;
 }
 
 
@@ -488,7 +489,7 @@ HttpResponse doDeleteHttpRequest(String auth_token, String requestUrl){
  * If a negative status is returned, an error will be raised and the pipeline will fail.
  */
 HttpResponse doPostHttpRequestWithJson(String auth_token, String json, String requestUrl){
-    return doHttpRequestWithJson(auth_token, json, requestUrl, "POST");
+  return doHttpRequestWithJson(auth_token, json, requestUrl, "POST");
 }
 
 /**
@@ -496,7 +497,7 @@ HttpResponse doPostHttpRequestWithJson(String auth_token, String json, String re
  * If a negative status is returned, an error will be raised and the pipeline will fail.
  */
 HttpResponse doPutHttpRequestWithJson(String json, String requestUrl){
-    return doHttpRequestWithJson(json, requestUrl, "PUT");
+  return doHttpRequestWithJson(json, requestUrl, "PUT");
 }
 
 /**
@@ -505,57 +506,57 @@ HttpResponse doPutHttpRequestWithJson(String json, String requestUrl){
  * verb - PUT or POST
  */
 HttpResponse doHttpRequestWithJson(String auth_token, String json, String requestUrl, String verb){
-    URL url = new URL(requestUrl);
-    HttpURLConnection connection = url.openConnection();
+  URL url = new URL(requestUrl);
+  HttpURLConnection connection = url.openConnection();
 
-    connection.setRequestMethod(verb);
-    def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
-    connection.setRequestProperty("Content-Type", "application/json");
-    connection.setRequestProperty("Authorization", basic_auth);
-    connection.doOutput = true;
+  connection.setRequestMethod(verb);
+  def basic_auth = "Basic ${auth_token.bytes.encodeBase64().toString()}"
+  connection.setRequestProperty("Content-Type", "application/json");
+  connection.setRequestProperty("Authorization", basic_auth);
+  connection.doOutput = true;
 
-    //write the payload to the body of the request
-    def writer = new OutputStreamWriter(connection.outputStream);
-    writer.write(json);
-    writer.flush();
-    writer.close();
+  //write the payload to the body of the request
+  def writer = new OutputStreamWriter(connection.outputStream);
+  writer.write(json);
+  writer.flush();
+  writer.close();
 
-    //post the request
-    connection.connect();
+  //post the request
+  connection.connect();
 
-    //parse the response
-    HttpResponse resp = new HttpResponse(connection);
+  //parse the response
+  HttpResponse resp = new HttpResponse(connection);
 
-    connection = null;
+  connection = null;
 
-    if(resp.isFailure()) {
-        error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");
-    }
+  if(resp.isFailure()) {
+    error("\n$verb to URL: $requestUrl\n    JSON: $json\n    HTTP Status: $resp.statusCode\n    Message: $resp.message\n    Response Body: $resp.body");
+  }
 
-    echo("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");
-    echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
+  echo("Request ($verb):\n  URL: $requestUrl\n  JSON: $json");
+  echo("Response:\n  HTTP Status: $resp.statusCode\n  Message: $resp.message\n  Response Body: $resp.body");
 
-    return resp;
+  return resp;
 }
+
 
 class HttpResponse {
 
-    String body;
-    String message;
-    Integer statusCode;
-    boolean failure = false;
+  String body;
+  String message;
+  Integer statusCode;
+  boolean failure = false;
 
-    public HttpResponse(HttpURLConnection connection){
+  public HttpResponse(HttpURLConnection connection){
+    this.statusCode = connection.responseCode;
+    this.message = connection.responseMessage;
 
-        this.statusCode = connection.responseCode;
-        this.message = connection.responseMessage;
-
-        if ( statusCode >= 200 && statusCode < 300 ) {
-            //this would fail the pipeline if there was a 400
-            this.body = connection.content.text;
-        } else {
-            this.failure = true;
-            this.body = connection.getErrorStream().text;
-        }
+    if ( statusCode >= 200 && statusCode < 300 ) {
+      //this would fail the pipeline if there was a 400
+      this.body = connection.content.text;
+    } else {
+      this.failure = true;
+      this.body = connection.getErrorStream().text;
     }
+  }
 }
