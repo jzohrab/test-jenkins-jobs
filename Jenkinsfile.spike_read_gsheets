@@ -6,7 +6,7 @@ node('sensei_build') {
   try {
     echo 'reading gsheet'
     // append key=yourAPIKey to the request
-    def api_key = "AIzaSyB6MKz37nS-XBA0P32v4CC6CApRkpMOFuA"
+    def api_key = "AIzaSyBVkU_PmOaFihKE-e98CiGCXyEofvMF2S0"
     
     // test sheet: https://docs.google.com/spreadsheets/d/1LvuVuXOQ5aA-Eq6a6IiqakaIFt6zIiby7pgRyXgEF1w/edit#gid=1334326171
     def spreadsheet_id = '1LvuVuXOQ5aA-Eq6a6IiqakaIFt6zIiby7pgRyXgEF1w'
