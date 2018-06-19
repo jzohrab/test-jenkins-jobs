@@ -6,6 +6,8 @@ node('sensei_build') {
   try {
     echo 'reading gsheet'
     // append key=yourAPIKey to the request
+    def api_key = "AIzaSyB6MKz37nS-XBA0P32v4CC6CApRkpMOFuA"
+    
     // test sheet: https://docs.google.com/spreadsheets/d/1LvuVuXOQ5aA-Eq6a6IiqakaIFt6zIiby7pgRyXgEF1w/edit#gid=1334326171
     def spreadsheet_id = '1LvuVuXOQ5aA-Eq6a6IiqakaIFt6zIiby7pgRyXgEF1w'
     // team_list page id = 1334326171
@@ -16,7 +18,7 @@ node('sensei_build') {
     // GET https://sheets.googleapis.com/v4/spreadsheets/spreadsheetId/values/range
     def uri = "https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet_id}/values/${range}"
     echo "Calling uri: ${uri}"
-    def uri_with_key = "${uri}?key=x"
+    def uri_with_key = "${uri}?key=${api_key}"
     
     HttpResponse response = doGetHttpRequest(uri_with_key)
     echo "Got response: ${response.body}"
