@@ -5,6 +5,18 @@ SLACK_CHANNEL = '@jzohrab'
 node('sensei_build') {
   try {
     echo 'reading gsheet'
+    // append key=yourAPIKey to the request
+    // test sheet: https://docs.google.com/spreadsheets/d/1LvuVuXOQ5aA-Eq6a6IiqakaIFt6zIiby7pgRyXgEF1w/edit#gid=1334326171
+    def spreadsheet_id = '1LvuVuXOQ5aA-Eq6a6IiqakaIFt6zIiby7pgRyXgEF1w'
+    // team_list page id = 1334326171
+    // cols A - F:
+    // name, git_email, github_user, slack_username, team, email
+    def range: 'team_list!A:F'
+
+    // GET https://sheets.googleapis.com/v4/spreadsheets/spreadsheetId/values/range
+    def uri = "https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet_id}/values/${range}"
+    echo "Calling uri: ${uri}"
+
   }
   catch(err) {
     echo "Error: ${err}"
