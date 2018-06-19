@@ -18,10 +18,14 @@ node('sensei_build') {
     // GET https://sheets.googleapis.com/v4/spreadsheets/spreadsheetId/values/range
     def uri = "https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet_id}/values/${range}"
     echo "Calling uri: ${uri}"
+
+    echo '----------------------------------------'
+    echo 'Getting with an API key fails with 403, "The caller does not have permission"
     def uri_with_key = "${uri}?key=${api_key}"
-    
     HttpResponse response = doGetHttpRequest(uri_with_key)
     echo "Got response: ${response.body}"
+    echo '----------------------------------------'
+    
   }
   catch(err) {
     echo "Error: ${err}"
