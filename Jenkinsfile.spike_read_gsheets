@@ -17,6 +17,8 @@ node('sensei_build') {
     def uri = "https://sheets.googleapis.com/v4/spreadsheets/${spreadsheet_id}/values/${range}"
     echo "Calling uri: ${uri}"
 
+    HttpResponse response = doGetHttpRequest(uri)
+    echo "Got response: ${response.body}"
   }
   catch(err) {
     echo "Error: ${err}"
